@@ -1,10 +1,15 @@
 //Import dependencies
+require('dotenv').config();
 const path = require('path');
 const http = require('http');
 const express = require('express');
 const socketIO = require('socket.io');
+const { Pool } = require('pg');
 
-//Import classes
+//Import Socket.IO event handlers
+const { initializeSocketEvents } = require('../src/socket/events');
+
+//Import legacy classes (for backward compatibility with old code)
 const {LiveGames} = require('./utils/liveGames');
 const {Players} = require('./utils/players');
 
@@ -12,25 +17,109 @@ const publicPath = path.join(__dirname, '../public');
 var app = express();
 var server = http.createServer(app);
 var io = socketIO(server);
-var games = new LiveGames();
-var players = new Players();
 
-//Mongodb setup
+// PostgreSQL connection pool
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/ems_kahoot',
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Test database connection
+db.query('SELECT NOW()', (err, res) => {
+    if (err) {
+        console.error('Database connection error:', err);
+    } else {
+        console.log('Database connected successfully at:', res.rows[0].now);
+    }
+});
+
+// Legacy MongoDB setup (keeping for backward compatibility)
 var MongoClient = require('mongodb').MongoClient;
 var mongoose = require('mongoose');
 var url = "mongodb://localhost:27017/";
 
-
+// Legacy game/player managers
+var games = new LiveGames();
+var players = new Players();
 
 app.use(express.static(publicPath));
+app.use(express.json());
 
-//Starting server on port 3000
-server.listen(3000, () => {
-    console.log("Server started on port 3000");
+// API Routes
+// Get all quizzes
+app.get('/api/quizzes', async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT q.id, q.title, q.description, q.category, q.created_at,
+                   COUNT(qu.id) as question_count
+            FROM quizzes q
+            LEFT JOIN questions qu ON q.id = qu.quiz_id
+            WHERE q.is_public = true
+            GROUP BY q.id
+            ORDER BY q.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching quizzes:', error);
+        res.status(500).json({ error: 'Failed to fetch quizzes' });
+    }
 });
 
-//When a connection to server is made from client
-io.on('connection', (socket) => {
+// Get a specific quiz with questions
+app.get('/api/quizzes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await db.query(`
+            SELECT q.*,
+                   json_agg(
+                       json_build_object(
+                           'id', qu.id,
+                           'question_text', qu.question_text,
+                           'time_limit', qu.time_limit,
+                           'order_index', qu.order_index,
+                           'answer_count', (
+                               SELECT COUNT(*) FROM answer_options WHERE question_id = qu.id
+                           )
+                       ) ORDER BY qu.order_index
+                   ) as questions
+            FROM quizzes q
+            LEFT JOIN questions qu ON q.id = qu.quiz_id
+            WHERE q.id = $1
+            GROUP BY q.id
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Quiz not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching quiz:', error);
+        res.status(500).json({ error: 'Failed to fetch quiz' });
+    }
+});
+
+//Starting server on port 3000
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+});
+
+// Initialize new Socket.IO event handlers with PostgreSQL
+initializeSocketEvents(io, db);
+
+console.log('EMS Kahoot game engine initialized');
+console.log('- Socket.IO events configured');
+console.log('- PostgreSQL database connected');
+console.log('- Max players per room: 20');
+
+//===========================================
+// LEGACY CODE BELOW - For backward compatibility
+// This code will be removed in future versions
+//===========================================
+
+//When a connection to server is made from client (LEGACY)
+io.on('connection-legacy', (socket) => {
     
     //When host connects for the first time
     socket.on('host-join', (data) =>{

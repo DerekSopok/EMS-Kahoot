@@ -4,6 +4,8 @@
   "description": "A kahoot website clone",
   "main": "index.js",
   "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "node db/migrations/run.js",
     "seed": "node db/seeds/seed.js",

@@ -1,33 +1,148 @@
-html, body { height: 90%; padding: 0; margin: 0; }
-button{
-    width: 50%; height: 50%; float: left;
-}
-#answer1{
-    background-color: #4CAF50;
-}
-#answer2{
-    background-color: #f94a1e;
-}
-#answer3{
-    background-color: #3399ff;
-}
-#answer4{
-    background-color: #ff9933;
+:root {
+  --color-primary: #1368CE;
+  --color-secondary: #E21B3C;
+  --color-correct: #26890C;
+  --color-accent-orange: #FFA602;
+  --color-background: #46178F;
+  --answer-red: #E21B3C;
+  --answer-blue: #1368CE;
+  --answer-orange: #FFA602;
+  --answer-green: #26890C;
 }
 
-#buttons{
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+body {
+    background: var(--color-background);
+    font-family: 'Raleway', sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+#stats {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#nameText, #scoreText, #rankText {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    margin: 5px 10px;
+}
+
+#message {
+    font-family: 'Raleway', sans-serif;
     text-align: center;
+    font-size: 2rem;
+    font-weight: 900;
+    color: white;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px;
+    border-radius: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    min-width: 80%;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
-#nameText{
-    font-family: 'Raleway', sans-serif;
-    padding: 0px 10px;
+
+.button-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0;
+    width: 100%;
 }
-#scoreText{
+
+button.button {
+    border: none;
+    cursor: pointer;
     font-family: 'Raleway', sans-serif;
-    padding: 0px 10px;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 0;
 }
-#message{
-    font-family: 'Raleway', sans-serif;
-    text-align: center;
-    font-size: 35px;
+
+button.button:active {
+    transform: scale(0.95);
+}
+
+#answer1 {
+    background-color: var(--answer-red);
+    border-right: 3px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+#answer2 {
+    background-color: var(--answer-blue);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+#answer3 {
+    background-color: var(--answer-orange);
+    border-right: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+#answer4 {
+    background-color: var(--answer-green);
+}
+
+#answer1::before { content: "▲"; font-size: 4rem; }
+#answer2::before { content: "◆"; font-size: 4rem; }
+#answer3::before { content: "●"; font-size: 4rem; }
+#answer4::before { content: "■"; font-size: 4rem; }
+
+@media (max-width: 600px) {
+    button.button {
+        font-size: 2rem;
+    }
+
+    #answer1::before, #answer2::before, #answer3::before, #answer4::before {
+        font-size: 3rem;
+    }
+
+    #message {
+        font-size: 1.5rem;
+        padding: 15px;
+    }
+
+    #nameText, #scoreText, #rankText {
+        font-size: 0.9rem;
+    }
+}
+
+@media (min-width: 600px) and (max-width: 1024px) {
+    button.button {
+        font-size: 3rem;
+    }
+
+    #answer1::before, #answer2::before, #answer3::before, #answer4::before {
+        font-size: 4.5rem;
+    }
 }

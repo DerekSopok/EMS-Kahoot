@@ -1,66 +1,153 @@
-@keyframes bgcolor {
-    0% {
-        background-color: #45a3e5
-    }
+:root {
+  --color-primary: #1368CE;
+  --color-secondary: #E21B3C;
+  --color-correct: #26890C;
+  --color-accent-orange: #FFA602;
+  --color-background: #46178F;
+}
 
-    30% {
-        background-color: #66bf39
-    }
-
-    60% {
-        background-color: #eb670f
-    }
-
-    90% {
-        background-color: #f35
-    }
-
-    100% {
-        background-color: #864cbf
-    }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    -webkit-animation: bgcolor 20s infinite;
-    animation: bgcolor 10s infinite;
-    -webkit-animation-direction: alternate;
-    animation-direction: alternate;
-}
-#title{
-    color:white;
+    background: var(--color-background);
     font-family: 'Raleway', sans-serif;
-    font-size: 35px;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
 }
-#gamePinText{
+
+#cancel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(226, 27, 60, 0.9);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Raleway', sans-serif;
+    transition: all 0.3s ease;
+}
+
+#cancel:hover {
+    background: var(--color-secondary);
+    transform: translateY(-2px);
+}
+
+#title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+#gamePinText {
     text-align: center;
     color: white;
     font-family: 'Tajawal', sans-serif;
-    font-size: 50px;
-}
-#players{
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-    font-size: 20px;
-    resize: none;
+    font-size: 10rem;
+    font-weight: 900;
+    letter-spacing: 20px;
+    margin: 2rem 0;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 40px 60px;
+    border-radius: 20px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
 }
 
-#start{
-    background-color: #3A3B3A;
+#players {
+    display: block;
+    margin: 2rem auto;
+    background: white;
+    border: none;
+    border-radius: 12px;
+    padding: 30px;
+    width: 90%;
+    max-width: 700px;
+    height: 400px;
+    font-size: 1.3rem;
+    resize: none;
+    font-family: 'Raleway', sans-serif;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+#start {
+    background: var(--color-correct);
     border: none;
     color: white;
-    padding: 15px 100px;
+    padding: 25px 100px;
     text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
+    font-size: 2rem;
+    font-weight: 900;
     cursor: pointer;
     display: block;
-    margin-left: auto;
-    margin-right: auto;
-    font-size: 25px;
+    margin: 2rem auto 0;
+    border-radius: 12px;
     font-family: 'Raleway', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 25px rgba(38, 137, 12, 0.3);
+}
+
+#start:hover {
+    background: #1f6e09;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(38, 137, 12, 0.4);
+}
+
+#start:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 1200px) {
+    #gamePinText {
+        font-size: 7rem;
+        letter-spacing: 15px;
+        padding: 30px 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    #gamePinText {
+        font-size: 4.5rem;
+        letter-spacing: 10px;
+        padding: 20px 30px;
+    }
+
+    #title {
+        font-size: 1.5rem;
+    }
+
+    #players {
+        font-size: 1.1rem;
+        height: 300px;
+        padding: 20px;
+    }
+
+    #start {
+        padding: 20px 60px;
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #gamePinText {
+        font-size: 3rem;
+        letter-spacing: 5px;
+        padding: 15px 20px;
+    }
 }

@@ -1,113 +1,228 @@
-#answer1{
-    background-color: #4CAF50;
-    margin: auto;
-    padding: 30px 20px;
-    height: 50%;
-    font-family: 'Raleway', sans-serif;
-    font-size: 20px;
+:root {
+  --color-primary: #1368CE;
+  --color-secondary: #E21B3C;
+  --color-correct: #26890C;
+  --color-accent-orange: #FFA602;
+  --color-background: #46178F;
+  --answer-red: #E21B3C;
+  --answer-blue: #1368CE;
+  --answer-orange: #FFA602;
+  --answer-green: #26890C;
 }
-#answer2{
-    background-color: #f94a1e;
-    margin: auto;
-    padding: 30px 20px;
-    height: 50%;
-    font-family: 'Raleway', sans-serif;
-    font-size: 20px;
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-#answer3{
-    background-color: #3399ff;
-    margin: auto;
-    padding: 30px 20px;
-    height: 50%;
+
+body {
+    background: var(--color-background);
     font-family: 'Raleway', sans-serif;
-    font-size: 20px;
+    padding: 20px;
+    min-height: 100vh;
 }
-#answer4{
-    background-color: #ff9933;
-    margin: auto;
-    padding: 30px 20px;
-    height: 50%;
+
+#questionNum {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+#playersAnswered {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+#timerText {
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: 'Raleway', sans-serif;
-    font-size: 20px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
 }
-.square{
+
+#num {
+    font-family: 'Tajawal', sans-serif;
+    font-size: 3rem;
+    font-weight: 900;
+    margin-left: 10px;
+}
+
+#question {
+    font-family: 'Raleway', sans-serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: white;
+    text-align: center;
+    margin: 140px auto 40px;
+    max-width: 90%;
+}
+
+.answer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 50vh;
+}
+
+#answer1, #answer2, #answer3, #answer4 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+#answer1 {
+    background-color: var(--answer-red);
+}
+
+#answer2 {
+    background-color: var(--answer-blue);
+}
+
+#answer3 {
+    background-color: var(--answer-orange);
+}
+
+#answer4 {
+    background-color: var(--answer-green);
+}
+
+#answer1::before { content: "▲"; position: absolute; top: 15px; left: 15px; font-size: 2rem; }
+#answer2::before { content: "◆"; position: absolute; top: 15px; left: 15px; font-size: 2rem; }
+#answer3::before { content: "●"; position: absolute; top: 15px; left: 15px; font-size: 2rem; }
+#answer4::before { content: "■"; position: absolute; top: 15px; left: 15px; font-size: 2rem; }
+
+.square {
+    width: 50px;
+    height: 50px;
+    display: inline-block;
+    margin: 0 5px;
+    border-radius: 8px;
+}
+
+#square1 { background-color: var(--answer-red); }
+#square2 { background-color: var(--answer-blue); }
+#square3 { background-color: var(--answer-orange); }
+#square4 { background-color: var(--answer-green); }
+
+#nextQButton {
+    display: none;
+    background: white;
     border: none;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: none;
-    font-size: 16px;
-    margin: 4px 2px;
-    width: 70px;
-    height: 0px;
-    font-size: 20px;
+    color: var(--color-background);
+    padding: 20px 60px;
+    font-size: 1.8rem;
+    font-weight: 900;
+    cursor: pointer;
+    margin: 30px auto;
+    border-radius: 12px;
+    font-family: 'Raleway', sans-serif;
+    text-transform: uppercase;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
 }
 
-#square1{
-    background-color: #4CAF50;
-}
-#square2{
-    background-color: #f94a1e;
-}
-#square3{
-    background-color: #3399ff;
-}
-#square4{
-    background-color: #ff9933;
+#nextQButton:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
-#nextQButton{
+/* Leaderboard Styles */
+#winnerTitle {
+    text-align: center;
+    font-family: 'Raleway', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: white;
+    margin: 60px 0 40px;
+    text-transform: uppercase;
     display: none;
-}
-#question{
-    font-family: 'Raleway', sans-serif;
-}
-#timerText{
-    font-family: 'Raleway', sans-serif;
-}
-#num{
-    font-family: 'Tajawal', sans-serif;
-    font-size: 35px;
-}
-#playersAnswered{
-    font-family: 'Tajawal', sans-serif;
-}
-#questionNum{
-    font-family: 'Tajawal', sans-serif;
 }
 
-#winner1{
+#winner1, #winner2, #winner3, #winner4, #winner5 {
     font-family: 'Raleway', sans-serif;
     text-align: center;
-    font-size: 30px;
+    color: white;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    max-width: 800px;
+    margin: 20px auto;
     display: none;
 }
-#winner2{
-    font-family: 'Raleway', sans-serif;
-    text-align: center;
-    font-size: 22px;
-    display: none;
+
+#winner1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: var(--color-background);
 }
-#winner3{
-    font-family: 'Raleway', sans-serif;
-    text-align: center;
-    font-size: 20px;
-    display: none;
+
+#winner2 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+    color: var(--color-background);
 }
-#winner4{
-    font-family: 'Raleway', sans-serif;
-    text-align: center;
-    display: none;
+
+#winner3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #CD7F32, #B8732B);
+    color: white;
 }
-#winner5{
-    font-family: 'Raleway', sans-serif;
-    text-align: center;
-    display: none;
+
+#winner4, #winner5 {
+    font-size: 1.5rem;
+    font-weight: 600;
 }
-#winnerTitle{
-    text-align: center;
-    font-family: 'Raleway', sans-serif;
-    font-size: 35px;
-    color: #3399ff;
-    display: none;
+
+@media (max-width: 768px) {
+    #question {
+        font-size: 2rem;
+        margin-top: 120px;
+    }
+
+    #answer1, #answer2, #answer3, #answer4 {
+        font-size: 1.3rem;
+        padding: 20px;
+    }
+
+    #timerText {
+        font-size: 1.5rem;
+    }
+
+    #num {
+        font-size: 2rem;
+    }
+
+    .answer-grid {
+        gap: 15px;
+        height: 45vh;
+    }
 }

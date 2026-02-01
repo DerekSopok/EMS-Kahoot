@@ -1,0 +1,308 @@
+[
+  {
+    "title": "EMT Trauma Assessment",
+    "description": "Essential trauma assessment skills for EMT-Basic level providers focusing on life-threatening injuries and the MARCH algorithm",
+    "category": "Trauma",
+    "is_public": true,
+    "questions": [
+      {
+        "question_text": "In the MARCH algorithm for tactical casualty care, what does the 'M' stand for?",
+        "question_type": "multiple_choice",
+        "time_limit": 20,
+        "points": 1000,
+        "order_index": 1,
+        "answer_options": [
+          {
+            "option_text": "Massive hemorrhage",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Moderate bleeding",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Minor wounds",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Medical assessment",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "When applying a tourniquet for life-threatening extremity bleeding, where should it be placed?",
+        "question_type": "multiple_choice",
+        "time_limit": 20,
+        "points": 1000,
+        "order_index": 2,
+        "answer_options": [
+          {
+            "option_text": "2-3 inches above the wound, high and tight on the limb",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Directly over the wound",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Below the wound to maintain circulation",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "On the joint closest to the wound",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "What is the priority sequence for controlling external hemorrhage?",
+        "question_type": "multiple_choice",
+        "time_limit": 25,
+        "points": 1000,
+        "order_index": 3,
+        "answer_options": [
+          {
+            "option_text": "Direct pressure, hemostatic dressing, tourniquet",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Tourniquet, direct pressure, hemostatic dressing",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Elevation, direct pressure, pressure points",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Hemostatic dressing, tourniquet, direct pressure",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "Which airway maneuver is most appropriate for an unconscious trauma patient with suspected cervical spine injury?",
+        "question_type": "multiple_choice",
+        "time_limit": 20,
+        "points": 1000,
+        "order_index": 4,
+        "answer_options": [
+          {
+            "option_text": "Jaw thrust maneuver",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Head tilt-chin lift",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Neck extension",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Head tilt only",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "Which signs indicate early/compensated shock in an adult trauma patient?",
+        "question_type": "multiple_choice",
+        "time_limit": 25,
+        "points": 1000,
+        "order_index": 5,
+        "answer_options": [
+          {
+            "option_text": "Increased heart rate, normal blood pressure, pale cool skin",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Decreased heart rate, low blood pressure, warm skin",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Normal heart rate, high blood pressure, flushed skin",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Decreased heart rate, normal blood pressure, cyanotic skin",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Paramedic Cardiac Emergencies",
+    "description": "Advanced cardiac assessment and intervention for paramedic-level providers including STEMI recognition, 12-lead interpretation, and ACLS protocols",
+    "category": "Cardiology",
+    "is_public": true,
+    "questions": [
+      {
+        "question_text": "Which ECG leads are most sensitive for detecting an inferior wall STEMI?",
+        "question_type": "multiple_choice",
+        "time_limit": 20,
+        "points": 1000,
+        "order_index": 1,
+        "answer_options": [
+          {
+            "option_text": "Leads II, III, and aVF",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Leads V1, V2, and V3",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Leads I, aVL, and V6",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Leads V4, V5, and V6",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "In 12-lead ECG placement, where should the V4 electrode be positioned?",
+        "question_type": "multiple_choice",
+        "time_limit": 20,
+        "points": 1000,
+        "order_index": 2,
+        "answer_options": [
+          {
+            "option_text": "5th intercostal space, midclavicular line",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "4th intercostal space, left sternal border",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "5th intercostal space, anterior axillary line",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "6th intercostal space, midclavicular line",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "What is the first drug and dose given in adult cardiac arrest with pulseless VT/VF after initial defibrillation attempts?",
+        "question_type": "multiple_choice",
+        "time_limit": 25,
+        "points": 1000,
+        "order_index": 3,
+        "answer_options": [
+          {
+            "option_text": "Epinephrine 1 mg IV/IO",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Amiodarone 300 mg IV/IO",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Atropine 0.5 mg IV/IO",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Lidocaine 1.5 mg/kg IV/IO",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "What is the correct dosage of adenosine for initial treatment of stable SVT in an adult?",
+        "question_type": "multiple_choice",
+        "time_limit": 20,
+        "points": 1000,
+        "order_index": 4,
+        "answer_options": [
+          {
+            "option_text": "6 mg rapid IV push",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "12 mg rapid IV push",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "3 mg slow IV push",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "0.5 mg rapid IV push",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      },
+      {
+        "question_text": "A wide-complex tachycardia with a rate of 180 bpm is most likely which rhythm?",
+        "question_type": "multiple_choice",
+        "time_limit": 25,
+        "points": 1000,
+        "order_index": 5,
+        "answer_options": [
+          {
+            "option_text": "Ventricular tachycardia",
+            "is_correct": true,
+            "order_index": 1
+          },
+          {
+            "option_text": "Sinus tachycardia",
+            "is_correct": false,
+            "order_index": 2
+          },
+          {
+            "option_text": "Atrial flutter with 2:1 conduction",
+            "is_correct": false,
+            "order_index": 3
+          },
+          {
+            "option_text": "Atrial fibrillation",
+            "is_correct": false,
+            "order_index": 4
+          }
+        ]
+      }
+    ]
+  }
+]

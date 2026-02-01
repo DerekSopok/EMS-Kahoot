@@ -69,4 +69,4 @@ None
 ## Git Checkpoint
 
 - v0.1.0-handoff-system ✓ (created and pushed)
-- v0.2.0-db-seeding (pending push)
+- v0.2.0-db-seeding ✓ (created locally, tag push restricted by git server)

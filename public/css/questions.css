@@ -62,6 +62,10 @@ body {
     font-size: 0.9rem;
 }
 
+.muted {
+    color: var(--text-light);
+}
+
 .btn {
     padding: 0.75rem 1.5rem;
     border: none;
@@ -218,6 +222,36 @@ form {
     margin-bottom: 0.5rem;
     font-weight: 600;
     color: var(--text);
+}
+
+.image-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.image-preview {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-light);
+    background: #f9fafb;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.image-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .form-group input,

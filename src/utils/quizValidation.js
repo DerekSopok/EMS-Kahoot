@@ -54,6 +54,12 @@ function validateQuestion(question) {
         errors.push('Time limit must be 5-120 seconds');
     }
 
+    if (question.image_url !== undefined && question.image_url !== null) {
+        if (typeof question.image_url !== 'string' || question.image_url.length > 500) {
+            errors.push('Image URL must be a string under 500 characters');
+        }
+    }
+
     return { valid: errors.length === 0, errors };
 }
 

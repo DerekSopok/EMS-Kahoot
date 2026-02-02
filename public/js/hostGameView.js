@@ -6,6 +6,8 @@ const playersAnswered = document.getElementById('playersAnswered');
 const timerText = document.getElementById('timerText');
 const timeValue = document.getElementById('num');
 const questionText = document.getElementById('question');
+const questionImageContainer = document.getElementById('questionImageContainer');
+const questionImage = document.getElementById('questionImage');
 const nextButton = document.getElementById('nextQButton');
 
 const answerElements = [
@@ -51,6 +53,22 @@ const resetAnswers = () => {
     });
 };
 
+const updateQuestionImage = (imageUrl) => {
+    if (!questionImageContainer || !questionImage) {
+        return;
+    }
+
+    if (imageUrl) {
+        questionImage.src = imageUrl;
+        questionImageContainer.style.display = 'flex';
+        document.body.classList.add('has-question-image');
+    } else {
+        questionImage.removeAttribute('src');
+        questionImageContainer.style.display = 'none';
+        document.body.classList.remove('has-question-image');
+    }
+};
+
 const renderQuestion = (data) => {
     currentCorrectAnswerId = data?.correctAnswerId || currentCorrectAnswerId;
     currentAnswerIds = Array.isArray(data.answers) ? data.answers.map(answer => answer.id) : [];
@@ -62,6 +80,8 @@ const renderQuestion = (data) => {
     if (questionText) {
         questionText.textContent = data.questionText;
     }
+
+    updateQuestionImage(data.imageUrl || null);
 
     if (playersAnswered) {
         playersAnswered.textContent = `Players Answered: 0 / ${totalPlayers}`;
@@ -192,6 +212,7 @@ socket.on('game:ended', (data) => {
     if (questionText) {
         questionText.textContent = 'GAME OVER';
     }
+    updateQuestionImage(null);
     if (timerText) {
         timerText.style.display = 'none';
     }

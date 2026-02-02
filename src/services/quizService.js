@@ -96,6 +96,7 @@ class QuizService {
         return questions.map((q, index) => ({
             id: q.id,
             question_text: q.question_text,
+            image_url: q.image_url || null,
             time_limit: q.time_limit || 20,
             points: q.points || 1000,
             order_index: q.order_index || index + 1,

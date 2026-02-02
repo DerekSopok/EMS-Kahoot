@@ -12,6 +12,7 @@ const { initializeSocketEvents } = require('../src/socket/events');
 const quizService = require('../src/services/quizService');
 const adminAuth = require('../src/middleware/adminAuth');
 const { CATEGORIES, validateQuiz, validateQuestion } = require('../src/utils/quizValidation');
+const adminImagesRouter = require('../src/routes/adminImages');
 
 
 const publicPath = path.join(__dirname, '../public');
@@ -23,6 +24,7 @@ app.use(express.static(publicPath));
 app.use(express.json());
 
 app.use('/api/admin', adminAuth);
+app.use('/api/admin', adminImagesRouter);
 
 function buildValidationErrorResponse(errors) {
     return { error: 'Validation failed', details: errors };
@@ -206,6 +208,7 @@ app.post('/api/admin/quizzes/:id/questions', async (req, res) => {
         const quizId = parseInt(req.params.id);
         const questionInput = {
             question_text: typeof req.body.question_text === 'string' ? req.body.question_text.trim() : req.body.question_text,
+            image_url: typeof req.body.image_url === 'string' ? req.body.image_url.trim() : req.body.image_url,
             time_limit: req.body.time_limit,
             points: req.body.points,
             answer_options: sanitizeAnswerOptions(req.body.answer_options)
@@ -252,6 +255,9 @@ app.put('/api/admin/quizzes/:quizId/questions/:questionId', async (req, res) => 
         if (req.body.points !== undefined) {
             updates.points = req.body.points;
         }
+        if (req.body.image_url !== undefined) {
+            updates.image_url = typeof req.body.image_url === 'string' ? req.body.image_url.trim() : req.body.image_url;
+        }
         if (req.body.answer_options !== undefined) {
             updates.answer_options = sanitizeAnswerOptions(req.body.answer_options);
         }
@@ -260,6 +266,7 @@ app.put('/api/admin/quizzes/:quizId/questions/:questionId', async (req, res) => 
             question_text: updates.question_text !== undefined ? updates.question_text : existingQuestion.question_text,
             time_limit: updates.time_limit !== undefined ? updates.time_limit : existingQuestion.time_limit,
             points: updates.points !== undefined ? updates.points : existingQuestion.points,
+            image_url: updates.image_url !== undefined ? updates.image_url : existingQuestion.image_url,
             answer_options: updates.answer_options !== undefined ? updates.answer_options : existingQuestion.answer_options
         };
         const { valid, errors } = validateQuestion(mergedQuestion);

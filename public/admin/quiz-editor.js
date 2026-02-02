@@ -5,6 +5,9 @@ const pointOptions = [500, 750, 1000, 1500, 2000];
 let currentQuiz = null;
 let activeQuestionId = null;
 let unsavedChanges = false;
+let currentQuestionImageUrl = null;
+let previousQuestionImageUrl = null;
+let pendingUploadedImageUrl = null;
 
 const loginPrompt = document.getElementById('loginPrompt');
 const loginForm = document.getElementById('loginForm');
@@ -30,6 +33,9 @@ const answerOptionsContainer = document.getElementById('answerOptions');
 const addOptionBtn = document.getElementById('addOptionBtn');
 const questionErrors = document.getElementById('questionErrors');
 const cancelQuestionBtn = document.getElementById('cancelQuestionBtn');
+const imagePreview = document.getElementById('imagePreview');
+const imageUploadInput = document.getElementById('imageUpload');
+const removeImageBtn = document.getElementById('removeImageBtn');
 
 document.addEventListener('DOMContentLoaded', () => {
     loginForm.addEventListener('submit', handleLoginSubmit);
@@ -42,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     addOptionBtn.addEventListener('click', handleAddOption);
     cancelQuestionBtn.addEventListener('click', closeQuestionEditor);
     questionForm.addEventListener('submit', handleQuestionSubmit);
+    imageUploadInput.addEventListener('change', handleImageUpload);
+    removeImageBtn.addEventListener('click', handleRemoveImage);
 
     quizForm.querySelectorAll('input, textarea, select').forEach((element) => {
         element.addEventListener('input', markUnsaved);
@@ -69,6 +77,105 @@ function getToken() {
 function setStatus(type, message) {
     statusMessage.textContent = message;
     statusMessage.className = `status ${type}`;
+}
+
+function isLocalImageUrl(url) {
+    return typeof url === 'string' && url.startsWith('/images/questions/');
+}
+
+function setImagePreview(url) {
+    if (!imagePreview) {
+        return;
+    }
+
+    if (!url) {
+        imagePreview.innerHTML = '<p class="muted">No image selected.</p>';
+        removeImageBtn.disabled = true;
+        return;
+    }
+
+    imagePreview.innerHTML = `<img src="${url}" alt="Question image preview">`;
+    removeImageBtn.disabled = false;
+}
+
+function resetImageState() {
+    currentQuestionImageUrl = null;
+    previousQuestionImageUrl = null;
+    pendingUploadedImageUrl = null;
+    if (imageUploadInput) {
+        imageUploadInput.value = '';
+    }
+    setImagePreview(null);
+}
+
+async function deleteImageByUrl(url) {
+    if (!isLocalImageUrl(url)) {
+        return;
+    }
+
+    const filename = url.split('/').pop();
+    if (!filename) {
+        return;
+    }
+
+    try {
+        await adminFetch(`/api/admin/images/${filename}`, { method: 'DELETE' });
+    } catch (error) {
+        console.warn('Failed to delete image:', error.message);
+    }
+}
+
+async function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+
+    imagePreview.innerHTML = '<p class="muted">Uploading...</p>';
+    removeImageBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const response = await adminFetch('/api/admin/images', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Upload failed');
+        }
+
+        const data = await response.json();
+        currentQuestionImageUrl = data.url;
+        pendingUploadedImageUrl = data.url;
+        setImagePreview(currentQuestionImageUrl);
+        markUnsaved();
+    } catch (error) {
+        console.error('Image upload failed:', error);
+        imagePreview.innerHTML = `<p class="muted">Upload failed: ${error.message}</p>`;
+        if (imageUploadInput) {
+            imageUploadInput.value = '';
+        }
+    }
+}
+
+function handleRemoveImage() {
+    const urlToDelete = currentQuestionImageUrl;
+    currentQuestionImageUrl = null;
+    setImagePreview(null);
+    if (imageUploadInput) {
+        imageUploadInput.value = '';
+    }
+
+    if (pendingUploadedImageUrl && pendingUploadedImageUrl === urlToDelete) {
+        deleteImageByUrl(urlToDelete);
+        pendingUploadedImageUrl = null;
+    }
+
+    markUnsaved();
 }
 
 function showLoginPrompt(message = '') {
@@ -380,6 +487,13 @@ function openQuestionEditor(question = null) {
         questionTextInput.value = question.question_text || '';
         questionTimeSelect.value = question.time_limit || timeOptions[2];
         questionPointsSelect.value = question.points || pointOptions[2];
+        previousQuestionImageUrl = question.image_url || null;
+        currentQuestionImageUrl = question.image_url || null;
+        pendingUploadedImageUrl = null;
+        setImagePreview(currentQuestionImageUrl);
+        if (imageUploadInput) {
+            imageUploadInput.value = '';
+        }
         const options = Array.isArray(question.answer_options) && question.answer_options.length
             ? question.answer_options
             : createEmptyOptions(4);
@@ -391,6 +505,7 @@ function openQuestionEditor(question = null) {
         questionTimeSelect.value = timeOptions[2];
         questionPointsSelect.value = pointOptions[2];
         renderAnswerOptions(createEmptyOptions(4));
+        resetImageState();
     }
 
     questionEditor.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -401,6 +516,10 @@ function closeQuestionEditor() {
     questionForm.reset();
     questionErrors.textContent = '';
     activeQuestionId = null;
+    if (pendingUploadedImageUrl && pendingUploadedImageUrl !== previousQuestionImageUrl) {
+        deleteImageByUrl(pendingUploadedImageUrl);
+    }
+    resetImageState();
 }
 
 function populateSelectOptions(selectElement, options) {
@@ -540,6 +659,7 @@ async function handleQuestionSubmit(event) {
                 question_text: questionText,
                 time_limit: timeLimit,
                 points,
+                image_url: currentQuestionImageUrl || null,
                 answer_options: options
             })
         });
@@ -549,7 +669,15 @@ async function handleQuestionSubmit(event) {
             throw new Error(error.error || 'Failed to save question');
         }
 
+        const imageUrlToDelete = previousQuestionImageUrl && previousQuestionImageUrl !== currentQuestionImageUrl
+            ? previousQuestionImageUrl
+            : null;
         await loadQuiz();
+        if (imageUrlToDelete) {
+            await deleteImageByUrl(imageUrlToDelete);
+        }
+        previousQuestionImageUrl = currentQuestionImageUrl;
+        pendingUploadedImageUrl = null;
         closeQuestionEditor();
         unsavedChanges = false;
         setStatus('success', 'Question saved.');
@@ -570,6 +698,8 @@ async function deleteQuestion(questionId) {
     }
 
     try {
+        const question = currentQuiz?.questions?.find((entry) => entry.id === questionId);
+        const imageUrl = question?.image_url || null;
         setStatus('info', 'Deleting question...');
         const response = await adminFetch(`/api/admin/quizzes/${currentQuiz.id}/questions/${questionId}`, {
             method: 'DELETE'
@@ -578,6 +708,9 @@ async function deleteQuestion(questionId) {
             throw new Error('Failed to delete question');
         }
         await loadQuiz();
+        if (imageUrl) {
+            await deleteImageByUrl(imageUrl);
+        }
         setStatus('success', 'Question deleted.');
     } catch (error) {
         console.error('Error deleting question:', error);

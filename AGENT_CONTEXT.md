@@ -356,3 +356,21 @@ Server Broadcasts:
 - v0.2.0-db-seeding ✓ (created locally, tag push restricted by git server)
 - v0.3.0-game-engine ✓ (created locally, tag push restricted by git server)
 - v0.4.0-ui-overhaul ✓ (created locally, branch pushed to origin)
+
+---
+### Session 10 (2026-02-03) - Technical Debt Review Documentation
+
+**Completed**: Documented a comprehensive technical debt report ahead of Phase 2.
+
+**Docs Added**:
+- `docs/technical-debt-report.md`: prioritized findings across security, architecture, testing, and performance.
+
+**Key Risks (Critical)**:
+- Unauthenticated admin APIs allow quiz mutation by any user.
+- Legacy UI paths render quiz content via `innerHTML` (XSS risk).
+- Legacy socket flow likely broken and still referenced by old frontend.
+
+**Next Agent Should**:
+- Implement admin auth middleware for `/api/admin/*` routes.
+- Sanitize quiz content in legacy UIs or remove those paths.
+- Consolidate socket flow and remove legacy connection handler.

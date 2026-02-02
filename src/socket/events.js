@@ -10,9 +10,9 @@ const GameManager = require('./gameManager');
 /**
  * Initialize Socket.IO event handlers
  * @param {Object} io - Socket.IO server instance
- * @param {Object} db - PostgreSQL database pool
+ * @param {Object} quizService - Quiz service for loading quiz data from JSON
  */
-function initializeSocketEvents(io, db) {
+function initializeSocketEvents(io, quizService) {
     const gameManager = new GameManager();
 
     io.on('connection', (socket) => {
@@ -31,39 +31,10 @@ function initializeSocketEvents(io, db) {
             try {
                 const { quizId } = data;
 
-                // Fetch quiz and questions from database
-                const quizQuery = `
-                    SELECT q.*,
-                           json_agg(
-                               json_build_object(
-                                   'id', qu.id,
-                                   'question_text', qu.question_text,
-                                   'time_limit', qu.time_limit,
-                                   'points', qu.points,
-                                   'order_index', qu.order_index,
-                                   'answer_options', (
-                                       SELECT json_agg(
-                                           json_build_object(
-                                               'id', ao.id,
-                                               'option_text', ao.option_text,
-                                               'is_correct', ao.is_correct,
-                                               'order_index', ao.order_index
-                                           ) ORDER BY ao.order_index
-                                       )
-                                       FROM answer_options ao
-                                       WHERE ao.question_id = qu.id
-                                   )
-                               ) ORDER BY qu.order_index
-                           ) as questions
-                    FROM quizzes q
-                    LEFT JOIN questions qu ON q.id = qu.quiz_id
-                    WHERE q.id = $1
-                    GROUP BY q.id
-                `;
+                // Fetch quiz from JSON file
+                const quiz = await quizService.getQuizById(quizId);
 
-                const result = await db.query(quizQuery, [quizId]);
-
-                if (result.rows.length === 0) {
+                if (!quiz) {
                     socket.emit('host:create-room', {
                         success: false,
                         error: 'Quiz not found'
@@ -71,7 +42,6 @@ function initializeSocketEvents(io, db) {
                     return;
                 }
 
-                const quiz = result.rows[0];
                 const questions = quiz.questions;
 
                 if (!questions || questions.length === 0) {

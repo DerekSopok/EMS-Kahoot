@@ -4,7 +4,6 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const socketIO = require('socket.io');
-const { Pool } = require('pg');
 
 //Import Socket.IO event handlers
 const { initializeSocketEvents } = require('../src/socket/events');
@@ -21,26 +20,6 @@ var app = express();
 var server = http.createServer(app);
 var io = socketIO(server);
 
-// PostgreSQL connection pool
-const db = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/ems_kahoot',
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
-// Test database connection
-db.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error('Database connection error:', err);
-    } else {
-        console.log('Database connected successfully at:', res.rows[0].now);
-    }
-});
-
-// Legacy MongoDB setup (keeping for backward compatibility)
-var MongoClient = require('mongodb').MongoClient;
-var mongoose = require('mongoose');
-var url = "mongodb://localhost:27017/";
-
 // Legacy game/player managers
 var games = new LiveGames();
 var players = new Players();
@@ -49,53 +28,39 @@ app.use(express.static(publicPath));
 app.use(express.json());
 
 // API Routes
-// Get all quizzes
+// Get all quizzes (from JSON file)
 app.get('/api/quizzes', async (req, res) => {
     try {
-        const result = await db.query(`
-            SELECT q.id, q.title, q.description, q.category, q.created_at,
-                   COUNT(qu.id) as question_count
-            FROM quizzes q
-            LEFT JOIN questions qu ON q.id = qu.quiz_id
-            WHERE q.is_public = true
-            GROUP BY q.id
-            ORDER BY q.created_at DESC
-        `);
-        res.json(result.rows);
+        const quizzes = await quizService.loadQuizzes();
+        // Return public quizzes with question count
+        const publicQuizzes = quizzes
+            .filter(q => q.is_public !== false)
+            .map(q => ({
+                id: q.id,
+                title: q.title,
+                description: q.description,
+                category: q.category,
+                created_at: q.created_at,
+                question_count: q.questions ? q.questions.length : 0
+            }));
+        res.json(publicQuizzes);
     } catch (error) {
         console.error('Error fetching quizzes:', error);
         res.status(500).json({ error: 'Failed to fetch quizzes' });
     }
 });
 
-// Get a specific quiz with questions
+// Get a specific quiz with questions (from JSON file)
 app.get('/api/quizzes/:id', async (req, res) => {
     try {
-        const { id } = req.params;
-        const result = await db.query(`
-            SELECT q.*,
-                   json_agg(
-                       json_build_object(
-                           'id', qu.id,
-                           'question_text', qu.question_text,
-                           'time_limit', qu.time_limit,
-                           'order_index', qu.order_index,
-                           'answer_count', (
-                               SELECT COUNT(*) FROM answer_options WHERE question_id = qu.id
-                           )
-                       ) ORDER BY qu.order_index
-                   ) as questions
-            FROM quizzes q
-            LEFT JOIN questions qu ON q.id = qu.quiz_id
-            WHERE q.id = $1
-            GROUP BY q.id
-        `, [id]);
+        const id = parseInt(req.params.id);
+        const quiz = await quizService.getQuizById(id);
 
-        if (result.rows.length === 0) {
+        if (!quiz) {
             return res.status(404).json({ error: 'Quiz not found' });
         }
 
-        res.json(result.rows[0]);
+        res.json(quiz);
     } catch (error) {
         console.error('Error fetching quiz:', error);
         res.status(500).json({ error: 'Failed to fetch quiz' });
@@ -331,17 +296,27 @@ app.put('/api/admin/quizzes/:id/questions/reorder', async (req, res) => {
 
 //Starting server on port 3000
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`Server started on port ${PORT}`);
+
+    // Initialize Socket.IO event handlers (JSON-based, no database)
+    initializeSocketEvents(io, quizService);
+
+    // Log startup info with quiz count
+    try {
+        const quizzes = await quizService.loadQuizzes();
+        console.log('EMS Kahoot game engine initialized');
+        console.log('- Socket.IO events configured');
+        console.log(`- Quiz data loaded from JSON (${quizzes.length} quizzes available)`);
+        console.log('- Max players per room: 20');
+    } catch (error) {
+        console.error('Error loading quiz data:', error);
+        console.log('EMS Kahoot game engine initialized');
+        console.log('- Socket.IO events configured');
+        console.log('- Quiz data: ERROR loading from JSON');
+        console.log('- Max players per room: 20');
+    }
 });
-
-// Initialize new Socket.IO event handlers with PostgreSQL
-initializeSocketEvents(io, db);
-
-console.log('EMS Kahoot game engine initialized');
-console.log('- Socket.IO events configured');
-console.log('- PostgreSQL database connected');
-console.log('- Max players per room: 20');
 
 //===========================================
 // LEGACY CODE BELOW - For backward compatibility

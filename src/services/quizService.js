@@ -26,7 +26,24 @@ class QuizService {
     async loadQuizzes() {
         try {
             const data = await fs.readFile(this.filePath, 'utf-8');
-            return JSON.parse(data);
+            const quizzes = JSON.parse(data);
+
+            // Ensure all answer_options have IDs (for game compatibility)
+            quizzes.forEach(quiz => {
+                if (quiz.questions) {
+                    quiz.questions.forEach(question => {
+                        if (question.answer_options) {
+                            question.answer_options.forEach((option, index) => {
+                                if (!option.id) {
+                                    option.id = option.order_index || (index + 1);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            return quizzes;
         } catch (error) {
             // If file doesn't exist, return empty array
             if (error.code === 'ENOENT') {

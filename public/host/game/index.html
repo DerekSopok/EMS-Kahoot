@@ -3,10 +3,12 @@
     <head>
         <title>Game | KahootClone</title>
         <link rel = "stylesheet" href = "../../css/hostGameView.css">
+        <link rel = "stylesheet" href = "../../css/audio.css">
         <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Tajawal" rel="stylesheet">
     </head>
     <body>
+        <button id="mute-btn" class="mute-button" onclick="toggleMute()">🔊</button>
         <h4 id = "questionNum">Question 1 / x</h4>
         <h4 id = "playersAnswered">Players Answered: 0 / x</h4>
         <h3 id = "timerText">Time Left:<span id = "num"> 20</span></h3>
@@ -41,6 +43,7 @@
         <h3 id = "winner5">5.</h3>
 
         <script src = "../../socket.io/socket.io.js"></script>
+        <script src = "../../js/audioManager.js"></script>
         <script src = "../../js/hostGameView.js"></script>
     </body>
 </html>

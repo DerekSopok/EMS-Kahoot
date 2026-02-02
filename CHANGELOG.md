@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added admin API documentation for quiz management endpoints.
 - Added admin dashboard and quiz editor UI for managing quizzes and questions.
 - Added admin image upload API and quiz editor support for question images.
+- Added comprehensive audio system for Kahoot-style game experience:
+  - AudioManager class for centralized audio control (public/js/audioManager.js)
+  - Lobby background music playback
+  - Sound effects for question reveal, countdown, correct/wrong answers, time's up, leaderboard, and winner
+  - Mute button with localStorage persistence across all host and player pages
+  - Browser autoplay restriction handling with automatic preloading on user interaction
+  - Audio documentation and sourcing guide (public/audio/README.md)
+  - Shared audio CSS styling for consistent mute button appearance (public/css/audio.css)
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.

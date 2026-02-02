@@ -45,6 +45,11 @@ socket.on('host:create-room', (data) => {
     if (startButton) {
         startButton.disabled = false;
     }
+
+    // Play lobby music when room is created
+    if (typeof audioManager !== 'undefined') {
+        audioManager.playMusic('lobbyMusic');
+    }
 });
 
 socket.on('room:player-joined', (data) => {
@@ -60,9 +65,39 @@ function startGame() {
         return;
     }
 
+    // Stop lobby music and play countdown when game starts
+    if (typeof audioManager !== 'undefined') {
+        audioManager.stopMusic();
+        audioManager.play('countdown');
+    }
+
     window.location.href = `/host/game/?roomCode=${encodeURIComponent(roomCode)}`;
 }
 
 function endGame() {
     window.location.href = '/';
 }
+
+function toggleMute() {
+    if (typeof audioManager === 'undefined') {
+        return;
+    }
+
+    const muted = audioManager.toggleMute();
+    const muteBtn = document.getElementById('mute-btn');
+    if (muteBtn) {
+        muteBtn.textContent = muted ? '🔇' : '🔊';
+    }
+    localStorage.setItem('audioMuted', muted);
+}
+
+// Restore mute preference on load
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('audioMuted') === 'true' && typeof audioManager !== 'undefined') {
+        audioManager.toggleMute();
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            muteBtn.textContent = '🔇';
+        }
+    }
+});

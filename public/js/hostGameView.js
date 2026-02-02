@@ -26,6 +26,7 @@ let currentAnswerIds = [];
 const updateTimer = (timeLimit) => {
     clearInterval(timerId);
     let remaining = timeLimit;
+    let countdownPlayed = false;
 
     if (timeValue) {
         timeValue.textContent = ` ${remaining}`;
@@ -37,8 +38,18 @@ const updateTimer = (timeLimit) => {
             timeValue.textContent = ` ${remaining}`;
         }
 
+        // Play countdown sound during last 5 seconds
+        if (remaining === 5 && !countdownPlayed && typeof audioManager !== 'undefined') {
+            audioManager.play('countdown');
+            countdownPlayed = true;
+        }
+
         if (remaining <= 0) {
             clearInterval(timerId);
+            // Play time's up sound
+            if (typeof audioManager !== 'undefined') {
+                audioManager.play('timesUp');
+            }
             socket.emit('host:times-up');
         }
     }, 1000);
@@ -105,6 +116,11 @@ const renderQuestion = (data) => {
         timerText.style.display = 'block';
     }
 
+    // Play question reveal sound
+    if (typeof audioManager !== 'undefined') {
+        audioManager.play('questionReveal');
+    }
+
     updateTimer(data.timeLimit || 20);
 };
 
@@ -131,6 +147,11 @@ const showResults = (data) => {
 
     if (nextButton) {
         nextButton.style.display = 'block';
+    }
+
+    // Play leaderboard sound when showing results
+    if (typeof audioManager !== 'undefined') {
+        audioManager.play('leaderboard');
     }
 
     updateLeaderboard(data.leaderboard || []);
@@ -222,9 +243,39 @@ socket.on('game:ended', (data) => {
     if (nextButton) {
         nextButton.style.display = 'none';
     }
+
+    // Play winner celebration sound
+    if (typeof audioManager !== 'undefined') {
+        audioManager.play('winner');
+    }
+
     updateLeaderboard(data.leaderboard || []);
 });
 
 function nextQuestion() {
     socket.emit('host:next-question');
 }
+
+function toggleMute() {
+    if (typeof audioManager === 'undefined') {
+        return;
+    }
+
+    const muted = audioManager.toggleMute();
+    const muteBtn = document.getElementById('mute-btn');
+    if (muteBtn) {
+        muteBtn.textContent = muted ? '🔇' : '🔊';
+    }
+    localStorage.setItem('audioMuted', muted);
+}
+
+// Restore mute preference on load
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('audioMuted') === 'true' && typeof audioManager !== 'undefined') {
+        audioManager.toggleMute();
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            muteBtn.textContent = '🔇';
+        }
+    }
+});

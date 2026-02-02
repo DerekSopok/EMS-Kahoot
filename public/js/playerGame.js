@@ -112,9 +112,17 @@ socket.on('player:answer-result', (data) => {
     if (data?.isCorrect) {
         document.body.style.backgroundColor = '#4CAF50';
         showMessage('Correct!');
+        // Play correct answer sound
+        if (typeof audioManager !== 'undefined') {
+            audioManager.play('correct');
+        }
     } else {
         document.body.style.backgroundColor = '#f94a1e';
         showMessage('Incorrect!');
+        // Play wrong answer sound
+        if (typeof audioManager !== 'undefined') {
+            audioManager.play('wrong');
+        }
     }
 
     if (scoreText) {
@@ -148,4 +156,28 @@ socket.on('game:ended', () => {
 
 socket.on('room:host-disconnect', () => {
     window.location.href = '../../';
+});
+
+function toggleMute() {
+    if (typeof audioManager === 'undefined') {
+        return;
+    }
+
+    const muted = audioManager.toggleMute();
+    const muteBtn = document.getElementById('mute-btn');
+    if (muteBtn) {
+        muteBtn.textContent = muted ? '🔇' : '🔊';
+    }
+    localStorage.setItem('audioMuted', muted);
+}
+
+// Restore mute preference on load
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('audioMuted') === 'true' && typeof audioManager !== 'undefined') {
+        audioManager.toggleMute();
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            muteBtn.textContent = '🔇';
+        }
+    }
 });

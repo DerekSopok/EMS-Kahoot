@@ -3,16 +3,43 @@
     <head>
         <title>Lobby | KahootClone</title>
         <link rel = "stylesheet" href = "../css/lobby.css">
+        <link rel = "stylesheet" href = "../css/audio.css">
         <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
+        <button id="mute-btn" class="mute-button" onclick="toggleMute()">🔊</button>
         <h1 id = "title1">Waiting on host to start game</h1>
         <h3 id = "title2">Do you see your name on the screen?</h3>
         <div class="loader"></div>
         <br/>
     </body>
     <script src = "../socket.io/socket.io.js"></script>
+    <script src = "../js/audioManager.js"></script>
     <script src = "../js/lobby.js"></script>
-    
+    <script>
+        function toggleMute() {
+            if (typeof audioManager === 'undefined') {
+                return;
+            }
+
+            const muted = audioManager.toggleMute();
+            const muteBtn = document.getElementById('mute-btn');
+            if (muteBtn) {
+                muteBtn.textContent = muted ? '🔇' : '🔊';
+            }
+            localStorage.setItem('audioMuted', muted);
+        }
+
+        // Restore mute preference on load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('audioMuted') === 'true' && typeof audioManager !== 'undefined') {
+                audioManager.toggleMute();
+                const muteBtn = document.getElementById('mute-btn');
+                if (muteBtn) {
+                    muteBtn.textContent = '🔇';
+                }
+            }
+        });
+    </script>
 </html>

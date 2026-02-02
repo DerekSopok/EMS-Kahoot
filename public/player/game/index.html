@@ -3,10 +3,12 @@
     <head>
         <title>Game | KahootClone</title>
         <link rel = "stylesheet" href = "../../css/playerGameView.css">
+        <link rel = "stylesheet" href = "../../css/audio.css">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
     </head>
     <body>
+        <button id="mute-btn" class="mute-button" onclick="toggleMute()">🔊</button>
         <div id = "stats">
             <h4 id = "nameText">Name: </h4>
             <h4 id = "scoreText">Score: </h4>
@@ -20,6 +22,7 @@
             <button onclick = "answerSubmitted(4)" id = "answer4" class = "button"></button>
         </div>
         <script src = "../../socket.io/socket.io.js"></script>
+        <script src = "../../js/audioManager.js"></script>
         <script src = "../../js/playerGame.js"></script>
     </body>
 </html>

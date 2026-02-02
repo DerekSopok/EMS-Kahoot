@@ -62,6 +62,18 @@ Required fields:
 | `is_correct` | boolean | Whether the option is correct. |
 | `order_index` | number | Display order within the option list. |
 
+Optional fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | number | Optional stable option identifier; gameplay normalization will supply one if missing. |
+
+## Runtime normalization (gameplay)
+
+Socket gameplay requires stable option IDs and default ordering. The socket handlers call
+`quizService.formatQuestionsForGame` to add missing option IDs and default `order_index` values
+while preserving the stored JSON structure for API responses and admin workflows.
+
 ## Optional companion files
 
 The seed directory supports optional files for future expansion (not currently consumed):

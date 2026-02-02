@@ -3,13 +3,9 @@
 ## Current State
 
 - **Last Agent**: OpenAI Codex (GPT-5.2-Codex)
-- **Last Session**: 2026-02-03
-- **Branch**: update-agent-docs
-- **Commit**: See `git log -1 --oneline` for current head
-- **Last Agent**: GPT-5.2-Codex
-- **Last Session**: 2026-02-03
-- **Branch**: claude/kahoot-quiz-setup-08CqB
-- **Commit**: f25432d — "Add seed data format documentation"
+- **Last Session**: 2026-02-04
+- **Branch**: refactor/remove-legacy-code
+- **Commit**: d9fcbb6 — "refactor: remove legacy socket flow and MongoDB references"
 
 ## Active Task
 
@@ -374,3 +370,19 @@ Server Broadcasts:
 - Implement admin auth middleware for `/api/admin/*` routes.
 - Sanitize quiz content in legacy UIs or remove those paths.
 - Consolidate socket flow and remove legacy connection handler.
+
+---
+### Session 11 (2026-02-04) - Legacy Removal and Socket Flow Consolidation
+
+**Completed**: Removed legacy MongoDB/socket handlers, deleted legacy UI files, and consolidated host/player flows on the modern Socket.IO contract.
+
+**Changes**:
+- Removed `connection-legacy`, MongoDB wiring, and legacy session managers.
+- Added host/player reconnect flows with `GameManager` and updated frontend scripts to use modern events.
+- Updated documentation (README, ARCHITECTURE, CHANGELOG, ROADMAP) to reflect JSON storage and removed legacy paths.
+
+**Commit**: d9fcbb6 — "refactor: remove legacy socket flow and MongoDB references"
+
+**Next Agent Should**:
+- Validate end-to-end host/player flow in the browser (lobby → game → leaderboard).
+- Consider adding socket input validation for response times and room codes.

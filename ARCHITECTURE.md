@@ -22,10 +22,10 @@ EMS Kahoot is a real-time multiplayer quiz game designed for EMS (Emergency Medi
        │
        ├─────────────┬──────────────┬─────────────┐
        │             │              │             │
-┌──────▼──────┐ ┌───▼────┐  ┌──────▼──────┐ ┌───▼────────┐
-│  Player 1   │ │Player 2│  │  Player N   │ │ PostgreSQL │
-│  (Mobile)   │ │(Mobile)│  │   (Mobile)  │ │  Database  │
-└─────────────┘ └────────┘  └─────────────┘ └────────────┘
+┌──────▼──────┐ ┌───▼────┐  ┌──────▼──────┐ ┌───▼───────────┐
+│  Player 1   │ │Player 2│  │  Player N   │ │ Quiz JSON     │
+│  (Mobile)   │ │(Mobile)│  │   (Mobile)  │ │ (quizzes.json)│
+└─────────────┘ └────────┘  └─────────────┘ └───────────────┘
 ```
 
 ## Tech Stack
@@ -34,31 +34,44 @@ EMS Kahoot is a real-time multiplayer quiz game designed for EMS (Emergency Medi
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Real-time Communication**: Socket.IO v2.1.1
-- **Database**: PostgreSQL (migrating from MongoDB)
-- **ORM/Query Builder**: To be determined (Sequelize or pg)
+- **Data Storage**: JSON file (`db/seeds/quizzes.json`) via `quizService`
 
 ### Frontend
 - **Host Interface**: HTML, CSS, JavaScript (Vanilla)
 - **Player Interface**: Mobile-responsive HTML/CSS/JS
-- **Libraries**: jQuery (legacy - can be removed in refactor)
 
 ### Hosting
 - **Platform**: Render.com (free tier)
-- **Database**: Render PostgreSQL addon
+- **Database**: None (JSON file storage)
 
 #### Render Build/Start Commands
 - **Build Command**: `npm install`
 - **Start Command**: `npm start`
 - **Notes**: Legacy Postgres migration/seed scripts are archived and should not be part of the build pipeline.
 
-## Database Schema
+## Architecture
+
+### Data Flow
+- Quiz data: `db/seeds/quizzes.json` → `quizService` → API/Socket
+- Game sessions: In-memory via `GameManager`
+- Players: In-memory via `GameManager`
+
+### Socket Events
+- Handler: `src/socket/events.js`
+- Game state: `src/socket/gameManager.js`
+- Events: `host:create-room`, `host:join-room`, `player:join-room`, `player:rejoin-room`, etc.
+
+### Removed (Legacy)
+- MongoDB integration (deprecated)
+- Legacy socket flow (`connection-legacy`)
+- `server/utils/*` (consolidated into GameManager)
 
 ## Data Storage Contract (Current)
 
 EMS Kahoot stores quiz content in a committed JSON seed file and keeps all live game state in memory:
 
 - **Persistent (committed to GitHub):** `db/seeds/quizzes.json` contains quiz definitions, questions, and answer options.
-- **Ephemeral (in-memory only):** game sessions, players, player answers, and leaderboards live in the Socket.IO game manager (`src/socket/gameManager.js`, with legacy helpers in `server/utils/*`).
+- **Ephemeral (in-memory only):** game sessions, players, player answers, and leaderboards live in the Socket.IO game manager (`src/socket/gameManager.js`).
 - **Users:** user accounts are not persisted in the current implementation (no user storage is active).
 
 ### Table-to-Storage Mapping
@@ -66,31 +79,13 @@ EMS Kahoot stores quiz content in a committed JSON seed file and keeps all live 
 | Former DB Table | Current Storage |
 | --- | --- |
 | `quizzes`, `questions`, `answer_options` | `db/seeds/quizzes.json` (persistent JSON) |
-| `game_sessions`, `players`, `player_answers` | In-memory maps in `src/socket/gameManager.js` (legacy: `server/utils/*`) |
+| `game_sessions`, `players`, `player_answers` | In-memory maps in `src/socket/gameManager.js` |
 | `users` | Not persisted (out of scope for current storage) |
 
 ### Data Lifecycle
 
 - **Survives deploys:** Quiz content in `db/seeds/quizzes.json` (tracked in Git).
 - **Ephemeral:** Active sessions, player state, answers, and leaderboards reset on server restart.
-
-### Current State (MongoDB)
-The existing codebase uses MongoDB with the following structure:
-
-**kahootGames collection**:
-```javascript
-{
-  id: Number,
-  name: String,
-  questions: [
-    {
-      question: String,
-      answers: [String, String, String, String],
-      correct: Number (1-4)
-    }
-  ]
-}
-```
 
 ### Target State (PostgreSQL)
 
@@ -191,51 +186,45 @@ CREATE TABLE player_answers (
 ### Host Events
 
 **Emitted by Host:**
-- `host-join` - When host creates a game
-  - Payload: `{ id: quizId }`
-  - Response: `showGamePin` with `{ pin }`
-
-- `host-join-game` - When host enters game view
-  - Payload: `{ id: oldHostId }`
-  - Response: `gameQuestions` with question data
-
-- `startGame` - When host starts the game from lobby
-  - Response: `gameStarted`
-
-- `nextQuestion` - Move to next question
-  - Response: `gameQuestions` or `GameOver`
-
-- `timeUp` - When question timer expires
-  - Response: `questionOver`
+- `host:create-room` - Create a room for a quiz
+  - Payload: `{ quizId }`
+  - Response: `{ success, roomCode, quizTitle, questionCount }`
+- `host:join-room` - Rejoin an existing room after navigation
+  - Payload: `{ roomCode }`
+  - Response: `{ success, status, players, question? }`
+- `host:start-game` - Start the game
+- `host:next-question` - Advance to the next question
+- `host:times-up` - Mark time as up for the current question
+- `host:end-game` - End the game and emit final leaderboard
+- `host:get-leaderboard` - Request the current leaderboard
 
 **Received by Host:**
-- `updatePlayerLobby` - Player list updates
-- `updatePlayersAnswered` - Answer count updates
+- `room:player-joined` - Player list updates
+- `room:player-left` - Player list updates
+- `game:question-host` - Question data with correct answer
+- `game:player-answered` - Answer count updates
+- `game:times-up` - Correct answer + leaderboard
+- `game:ended` - Final leaderboard
 
 ### Player Events
 
 **Emitted by Player:**
-- `player-join` - Join game lobby
-  - Payload: `{ pin, name }`
-  - Response: `updatePlayerLobby` or `noGameFound`
-
-- `player-join-game` - Enter game view
-  - Payload: `{ id: playerId }`
-  - Response: `playerGameData`
-
-- `playerAnswer` - Submit answer
-  - Payload: `answerNumber (1-4)`
-  - Response: `answerResult`, `getTime`
-
-- `getScore` - Request current score
-  - Response: `newScore`
+- `player:join-room` - Join a room from the lobby
+  - Payload: `{ roomCode, displayName }`
+  - Response: `{ success, playerId }`
+- `player:rejoin-room` - Rejoin an existing room after navigation
+  - Payload: `{ roomCode, playerId }`
+  - Response: `{ success, status, question? }`
+- `player:submit-answer` - Submit an answer
+  - Payload: `{ answerId, responseTime }`
+- `player:leave` - Leave the room
 
 **Received by Player:**
-- `gameStartedPlayer` - Game has started
-- `nextQuestionPlayer` - New question available
-- `questionOver` - Question ended
-- `GameOver` - Final leaderboard
-- `hostDisconnect` - Host left game
+- `game:question` - Question data (no correct answer)
+- `player:answer-result` - Answer feedback and updated score
+- `game:times-up` - Correct answer + leaderboard
+- `game:ended` - Final leaderboard
+- `room:host-disconnect` - Host left game
 
 ### Shared Events
 - `disconnect` - Socket disconnection (automatic)
@@ -269,42 +258,28 @@ CREATE TABLE player_answers (
 EMS-Kahoot/
 ├── server/
 │   ├── server.js                 # Main server file
-│   ├── config/
-│   │   └── db.js                 # PostgreSQL connection
-│   ├── models/                   # Database models
-│   │   ├── User.js
-│   │   ├── Quiz.js
-│   │   ├── Question.js
-│   │   └── GameSession.js
-│   ├── routes/                   # API routes
-│   │   ├── auth.js
-│   │   ├── quizzes.js
-│   │   └── sessions.js
-│   ├── utils/
-│   │   ├── liveGames.js         # Game state management
-│   │   └── players.js           # Player state management
 │   └── middleware/
-│       └── auth.js              # Authentication middleware
+│       └── adminAuth.js          # Admin token middleware
+├── src/
+│   ├── socket/
+│   │   ├── events.js             # Socket.IO event handlers
+│   │   └── gameManager.js        # In-memory game/session manager
+│   └── services/
+│       └── quizService.js        # JSON quiz storage
 ├── public/
 │   ├── index.html               # Home page
-│   ├── host.html                # Host lobby
-│   ├── hostGame.html            # Host game view
-│   ├── player.html              # Player lobby
-│   ├── playerGame.html          # Player game view
-│   ├── creator.html             # Quiz creator (future)
+│   ├── host/                    # Host lobby + game pages
+│   ├── player/                  # Player lobby + game pages
 │   ├── css/
-│   │   └── styles.css
 │   └── js/
-│       ├── host.js
-│       ├── hostGame.js
+│       ├── hostLobby.js
+│       ├── hostGameView.js
 │       ├── playerGame.js
 │       ├── lobby.js
 │       └── create.js
 ├── db/
-│   ├── migrations/              # SQL migration files
-│   │   └── 001_initial_schema.sql
 │   └── seeds/                   # Seed data
-│       └── ems_sample_questions.sql
+│       └── quizzes.json
 ├── .agent-instructions/         # AI agent handoff files
 ├── package.json
 └── README.md
@@ -318,9 +293,8 @@ EMS-Kahoot/
 - Clients receive updates via event broadcasting
 
 ### Game State Management
-- In-memory storage for active games (LiveGames class)
-- In-memory storage for connected players (Players class)
-- Database for persistent quiz data and historical results
+- In-memory storage for active games and players via `GameManager`
+- JSON file for persistent quiz data via `quizService`
 
 ### Security Considerations
 - Validate all client inputs
@@ -333,12 +307,12 @@ EMS-Kahoot/
 - Future: Redis for shared session state across instances
 - Future: Message queue for async tasks (image processing, etc.)
 
-## Migration Path (MongoDB → PostgreSQL)
+## Migration Path (JSON → PostgreSQL)
 
 1. Create PostgreSQL schema
-2. Write migration script for existing quiz data
+2. Write migration script for existing quiz data in `db/seeds/quizzes.json`
 3. Update server.js to use PostgreSQL client
-4. Replace MongoClient calls with pg queries
+4. Replace quizService reads/writes with pg queries
 5. Test all game flows
 6. Deploy with database backup strategy
 

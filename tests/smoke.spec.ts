@@ -128,7 +128,7 @@ test.describe('EMS Kahoot Smoke Tests', () => {
     console.log('Reached host lobby');
 
     // Wait for WebSocket to establish and provide game PIN
-    // The server sends 'showGamePin' event after 'host-join'
+    // The server emits room code after host:create-room
     await page.waitForFunction(() => {
       const pinElement = document.getElementById('gamePinText');
       return pinElement && pinElement.textContent && pinElement.textContent.length > 0;

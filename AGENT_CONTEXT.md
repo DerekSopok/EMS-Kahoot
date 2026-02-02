@@ -3,24 +3,24 @@
 ## Current State
 
 - **Last Agent**: Claude Code (Sonnet 4.5)
-- **Last Session**: 2026-02-01
-- **Branch**: claude/ems-kahoot-ui-overhaul-wa8Mf
-- **Commit**: 1524858 — "feat: complete UI overhaul with Kahoot-style design"
+- **Last Session**: 2026-02-02
+- **Branch**: claude/kahoot-quiz-setup-08CqB
+- **Commit**: 6b562e7 — "feat: quiz management with GitHub auto-commit"
 
 ## Active Task
 
-UI Overhaul with Kahoot-Style Design ✓ COMPLETED
+Quiz Management System with GitHub Auto-Commit ✓ COMPLETED
 
-- [x] Redesign Player Join Page with centered card and purple background
-- [x] Redesign Player Lobby with waiting animation
-- [x] Redesign Host Lobby with huge Game PIN display
-- [x] Redesign Question Display (Host Screen) with 2x2 colored answer grid
-- [x] Redesign Player Answer Screen with large tap buttons
-- [x] Redesign Results/Leaderboard Screen with top 5 podium
-- [x] Update HTML structure to match new CSS grid layouts
-- [x] Implement mobile-first responsive design
-- [x] Commit and tag as v0.4.0-ui-overhaul
-- [x] Push to production branch
+- [x] Create GitHub auto-commit service for data persistence
+- [x] Create quiz service for JSON file operations
+- [x] Add 9 API endpoints for quiz/question CRUD
+- [x] Build admin dashboard UI at /admin
+- [x] Create quiz form modal for create/edit
+- [x] Build question editor with split-pane layout
+- [x] Add sample "Advanced Airway Management" quiz
+- [x] Update .env.example with GitHub token config
+- [x] Commit and tag as v0.5.0-quiz-management
+- [x] Push to branch
 
 ## Blockers
 
@@ -28,14 +28,92 @@ None
 
 ## Next Steps
 
-1. Test game engine with live quiz data
-2. Verify UI works with Socket.IO events
-3. Create user authentication system
-4. Build quiz creation/management UI
-5. Deploy to Render.com and verify live site
-6. Address security vulnerabilities (requires breaking changes)
+1. Deploy to Render with GITHUB_TOKEN environment variable
+2. Test quiz management in production environment
+3. Verify GitHub auto-commit works on Render
+4. Add authentication system for admin access
+5. Connect quiz management to game engine
+6. Add bulk import/export functionality
 
 ## Session Notes
+
+### Session 6 (2026-02-02) - Quiz Management System with GitHub Auto-Commit
+
+**Completed**: Built comprehensive quiz management system with automatic GitHub commits for data persistence on Render
+
+**Backend Services**:
+- **GitHub Service** (src/services/githubService.js):
+  - Auto-commits quizzes.json to GitHub via API on every save
+  - Generates semantic commit messages with timestamps
+  - Handles file SHA retrieval and updates
+  - Gracefully handles missing GITHUB_TOKEN (logs warning)
+
+- **Quiz Service** (src/services/quizService.js):
+  - JSON file-based quiz storage (db/seeds/quizzes.json)
+  - Auto-generates quiz and question IDs
+  - CRUD operations for quizzes and questions
+  - Question reordering with order_index management
+  - Triggers GitHub commits asynchronously
+
+**API Endpoints**:
+- GET /api/admin/quizzes - List all quizzes
+- GET /api/admin/quizzes/:id - Get single quiz with questions
+- POST /api/admin/quizzes - Create new quiz
+- PUT /api/admin/quizzes/:id - Update quiz metadata
+- DELETE /api/admin/quizzes/:id - Delete quiz
+- POST /api/admin/quizzes/:id/questions - Add question
+- PUT /api/admin/quizzes/:quizId/questions/:questionId - Update question
+- DELETE /api/admin/quizzes/:quizId/questions/:questionId - Delete question
+- PUT /api/admin/quizzes/:id/questions/reorder - Reorder questions
+
+**Validation Rules**:
+- Quiz title: 3-200 characters (required)
+- Question text: 10-500 characters (required)
+- Time limit: 10-60 seconds
+- Points: 100-2000
+- Answer options: exactly 4, exactly 1 correct
+
+**Frontend Pages**:
+- **/admin** - Quiz management dashboard:
+  - Grid layout with quiz cards
+  - Category filter dropdown
+  - Search by title/description
+  - Create/Edit/Delete/Manage Questions buttons
+  - Modal for quiz creation/editing
+
+- **/admin/questions.html** - Question editor:
+  - Split-pane layout (question list | editor)
+  - Question list shows order, text preview, time, points
+  - Editor form with question text, time limit, points, image URL
+  - 4 answer options (A, B, C, D) with radio button for correct
+  - Real-time saving with GitHub auto-commit
+
+**Styling**:
+- Consistent color palette with existing UI
+- Mobile-responsive design
+- Modern cards with hover effects
+- Form validation feedback
+
+**Sample Data**:
+- Created "Advanced Airway Management" quiz (5 questions)
+- Updated existing quizzes with proper ID structure
+- All quizzes now have quiz.id and question.id fields
+
+**Environment Configuration**:
+- Updated .env.example with GitHub variables:
+  - GITHUB_TOKEN (required for auto-commit)
+  - GITHUB_OWNER (DerekSopok)
+  - GITHUB_REPO (EMS-Kahoot)
+  - GITHUB_BRANCH (Production)
+
+**Dependencies**:
+- Installed node-fetch@2 for GitHub API calls
+
+**Tagged**: v0.5.0-quiz-management
+
+**Next Agent Should**: Deploy to Render, set GITHUB_TOKEN environment variable, test quiz management in production, verify auto-commit works, and consider adding authentication for admin routes.
+
+---
 
 ### Session 5 (2026-02-01) - UI Overhaul with Kahoot-Style Design
 

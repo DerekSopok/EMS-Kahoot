@@ -13,6 +13,49 @@ const editorForm = document.getElementById('editorForm');
 const questionForm = document.getElementById('questionForm');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 const deleteQuestionBtn = document.getElementById('deleteQuestionBtn');
+const adminTokenKey = 'adminToken';
+
+function promptForAdminToken(forcePrompt = false) {
+    let token = sessionStorage.getItem(adminTokenKey);
+
+    if (forcePrompt || !token) {
+        token = window.prompt('Enter the admin token to access quiz questions:');
+        if (token) {
+            token = token.trim();
+        }
+
+        if (token) {
+            sessionStorage.setItem(adminTokenKey, token);
+        } else {
+            sessionStorage.removeItem(adminTokenKey);
+            token = '';
+        }
+    }
+
+    return token;
+}
+
+async function adminFetch(url, options = {}) {
+    let token = promptForAdminToken();
+    if (!token) {
+        throw new Error('Admin token is required to continue.');
+    }
+
+    const headers = { ...(options.headers || {}), 'X-Admin-Token': token };
+    let response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+        sessionStorage.removeItem(adminTokenKey);
+        token = promptForAdminToken(true);
+        if (!token) {
+            throw new Error('Admin token is required to continue.');
+        }
+        const retryHeaders = { ...(options.headers || {}), 'X-Admin-Token': token };
+        response = await fetch(url, { ...options, headers: retryHeaders });
+    }
+
+    return response;
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!quizId) {
         alert('No quiz ID provided');
+        window.location.href = '/admin';
+        return;
+    }
+
+    const token = promptForAdminToken();
+    if (!token) {
+        alert('Admin token is required to access this page.');
         window.location.href = '/admin';
         return;
     }
@@ -41,7 +91,7 @@ function setupEventListeners() {
 // Load quiz and questions
 async function loadQuiz() {
     try {
-        const response = await fetch(`/api/admin/quizzes/${quizId}`);
+        const response = await adminFetch(`/api/admin/quizzes/${quizId}`);
         if (!response.ok) throw new Error('Failed to load quiz');
 
         quiz = await response.json();
@@ -182,14 +232,14 @@ async function handleQuestionSubmit(e) {
         let response;
         if (questionId) {
             // Update existing question
-            response = await fetch(`/api/admin/quizzes/${quizId}/questions/${questionId}`, {
+            response = await adminFetch(`/api/admin/quizzes/${quizId}/questions/${questionId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(questionData)
             });
         } else {
             // Create new question
-            response = await fetch(`/api/admin/quizzes/${quizId}/questions`, {
+            response = await adminFetch(`/api/admin/quizzes/${quizId}/questions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(questionData)
@@ -219,7 +269,7 @@ async function handleDeleteQuestion() {
     }
 
     try {
-        const response = await fetch(`/api/admin/quizzes/${quizId}/questions/${currentQuestion.id}`, {
+        const response = await adminFetch(`/api/admin/quizzes/${quizId}/questions/${currentQuestion.id}`, {
             method: 'DELETE'
         });
 

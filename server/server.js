@@ -10,6 +10,7 @@ const { initializeSocketEvents } = require('../src/socket/events');
 
 //Import services
 const quizService = require('../src/services/quizService');
+const adminAuth = require('../src/middleware/adminAuth');
 
 //Import legacy classes (for backward compatibility with old code)
 const {LiveGames} = require('./utils/liveGames');
@@ -31,6 +32,8 @@ var players = new Players();
 
 app.use(express.static(publicPath));
 app.use(express.json());
+
+app.use('/api/admin', adminAuth);
 
 // API Routes
 // Get all quizzes (using JSON file storage)

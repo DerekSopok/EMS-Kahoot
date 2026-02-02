@@ -18,18 +18,18 @@ socket.on('noGameFound', function(){
 });
 
 socket.on('gameQuestions', function(data){
-    document.getElementById('question').innerHTML = data.q1;
-    document.getElementById('answer1').innerHTML = data.a1;
-    document.getElementById('answer2').innerHTML = data.a2;
-    document.getElementById('answer3').innerHTML = data.a3;
-    document.getElementById('answer4').innerHTML = data.a4;
+    document.getElementById('question').textContent = data.q1;
+    document.getElementById('answer1').textContent = data.a1;
+    document.getElementById('answer2').textContent = data.a2;
+    document.getElementById('answer3').textContent = data.a3;
+    document.getElementById('answer4').textContent = data.a4;
     var correctAnswer = data.correct;
-    document.getElementById('playersAnswered').innerHTML = "Players Answered 0 / " + data.playersInGame;
+    document.getElementById('playersAnswered').textContent = "Players Answered 0 / " + data.playersInGame;
     updateTimer();
 });
 
 socket.on('updatePlayersAnswered', function(data){
-   document.getElementById('playersAnswered').innerHTML = "Players Answered " + data.playersAnswered + " / " + data.playersInGame; 
+   document.getElementById('playersAnswered').textContent = "Players Answered " + data.playersAnswered + " / " + data.playersInGame;
 });
 
 socket.on('questionOver', function(playerData, correct){
@@ -48,26 +48,26 @@ socket.on('questionOver', function(playerData, correct){
         document.getElementById('answer2').style.filter = "grayscale(50%)";
         document.getElementById('answer3').style.filter = "grayscale(50%)";
         document.getElementById('answer4').style.filter = "grayscale(50%)";
-        var current = document.getElementById('answer1').innerHTML;
-        document.getElementById('answer1').innerHTML = "&#10004" + " " + current;
+        var current = document.getElementById('answer1').textContent;
+        document.getElementById('answer1').textContent = "✓ " + current;
     }else if(correct == 2){
         document.getElementById('answer1').style.filter = "grayscale(50%)";
         document.getElementById('answer3').style.filter = "grayscale(50%)";
         document.getElementById('answer4').style.filter = "grayscale(50%)";
-        var current = document.getElementById('answer2').innerHTML;
-        document.getElementById('answer2').innerHTML = "&#10004" + " " + current;
+        var current = document.getElementById('answer2').textContent;
+        document.getElementById('answer2').textContent = "✓ " + current;
     }else if(correct == 3){
         document.getElementById('answer1').style.filter = "grayscale(50%)";
         document.getElementById('answer2').style.filter = "grayscale(50%)";
         document.getElementById('answer4').style.filter = "grayscale(50%)";
-        var current = document.getElementById('answer3').innerHTML;
-        document.getElementById('answer3').innerHTML = "&#10004" + " " + current;
+        var current = document.getElementById('answer3').textContent;
+        document.getElementById('answer3').textContent = "✓ " + current;
     }else if(correct == 4){
         document.getElementById('answer1').style.filter = "grayscale(50%)";
         document.getElementById('answer2').style.filter = "grayscale(50%)";
         document.getElementById('answer3').style.filter = "grayscale(50%)";
-        var current = document.getElementById('answer4').innerHTML;
-        document.getElementById('answer4').innerHTML = "&#10004" + " " + current;
+        var current = document.getElementById('answer4').textContent;
+        document.getElementById('answer4').textContent = "✓ " + current;
     }
     
     for(var i = 0; i < playerData.length; i++){
@@ -117,7 +117,7 @@ function nextQuestion(){
     
     document.getElementById('playersAnswered').style.display = "block";
     document.getElementById('timerText').style.display = "block";
-    document.getElementById('num').innerHTML = " 20";
+    document.getElementById('num').textContent = " 20";
     socket.emit('nextQuestion'); //Tell server to start new question
 }
 
@@ -142,9 +142,9 @@ socket.on('GameOver', function(data){
     document.getElementById('answer2').style.display = "none";
     document.getElementById('answer3').style.display = "none";
     document.getElementById('answer4').style.display = "none";
-    document.getElementById('timerText').innerHTML = "";
-    document.getElementById('question').innerHTML = "GAME OVER";
-    document.getElementById('playersAnswered').innerHTML = "";
+    document.getElementById('timerText').textContent = "";
+    document.getElementById('question').textContent = "GAME OVER";
+    document.getElementById('playersAnswered').textContent = "";
     
     
     
@@ -155,11 +155,11 @@ socket.on('GameOver', function(data){
     document.getElementById('winner5').style.display = "block";
     document.getElementById('winnerTitle').style.display = "block";
     
-    document.getElementById('winner1').innerHTML = "1. " + data.num1;
-    document.getElementById('winner2').innerHTML = "2. " + data.num2;
-    document.getElementById('winner3').innerHTML = "3. " + data.num3;
-    document.getElementById('winner4').innerHTML = "4. " + data.num4; 
-    document.getElementById('winner5').innerHTML = "5. " + data.num5;
+    document.getElementById('winner1').textContent = "1. " + data.num1;
+    document.getElementById('winner2').textContent = "2. " + data.num2;
+    document.getElementById('winner3').textContent = "3. " + data.num3;
+    document.getElementById('winner4').textContent = "4. " + data.num4;
+    document.getElementById('winner5').textContent = "5. " + data.num5;
 });
 
 
@@ -170,7 +170,6 @@ socket.on('getTime', function(player){
         time: time
     });
 });
-
 
 
 

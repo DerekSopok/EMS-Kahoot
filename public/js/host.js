@@ -11,7 +11,7 @@ socket.on('connect', function() {
 });
 
 socket.on('showGamePin', function(data){
-   document.getElementById('gamePinText').innerHTML = data.pin;
+   document.getElementById('gamePinText').textContent = data.pin;
 });
 
 //Adds player's name to screen and updates player count
@@ -42,4 +42,3 @@ socket.on('gameStarted', function(id){
 socket.on('noGameFound', function(){
    window.location.href = '../../';//Redirect user to 'join game' page
 });
-

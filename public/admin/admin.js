@@ -12,9 +12,58 @@ const closeBtn = document.querySelector('.close');
 const cancelBtn = document.getElementById('cancelBtn');
 const categoryFilter = document.getElementById('categoryFilter');
 const searchInput = document.getElementById('searchInput');
+const adminTokenKey = 'adminToken';
+
+function promptForAdminToken(forcePrompt = false) {
+    let token = sessionStorage.getItem(adminTokenKey);
+
+    if (forcePrompt || !token) {
+        token = window.prompt('Enter the admin token to access quiz management:');
+        if (token) {
+            token = token.trim();
+        }
+
+        if (token) {
+            sessionStorage.setItem(adminTokenKey, token);
+        } else {
+            sessionStorage.removeItem(adminTokenKey);
+            token = '';
+        }
+    }
+
+    return token;
+}
+
+async function adminFetch(url, options = {}) {
+    let token = promptForAdminToken();
+    if (!token) {
+        throw new Error('Admin token is required to continue.');
+    }
+
+    const headers = { ...(options.headers || {}), 'X-Admin-Token': token };
+    let response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+        sessionStorage.removeItem(adminTokenKey);
+        token = promptForAdminToken(true);
+        if (!token) {
+            throw new Error('Admin token is required to continue.');
+        }
+        const retryHeaders = { ...(options.headers || {}), 'X-Admin-Token': token };
+        response = await fetch(url, { ...options, headers: retryHeaders });
+    }
+
+    return response;
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    const token = promptForAdminToken();
+    if (!token) {
+        quizzesContainer.innerHTML = '<div class="loading">Admin token required to access this page.</div>';
+        return;
+    }
+
     loadQuizzes();
     setupEventListeners();
 });
@@ -39,7 +88,7 @@ function setupEventListeners() {
 // Load all quizzes
 async function loadQuizzes() {
     try {
-        const response = await fetch('/api/admin/quizzes');
+        const response = await adminFetch('/api/admin/quizzes');
         if (!response.ok) throw new Error('Failed to load quizzes');
 
         quizzes = await response.json();
@@ -147,14 +196,14 @@ async function handleQuizSubmit(e) {
         let response;
         if (quizId) {
             // Update existing quiz
-            response = await fetch(`/api/admin/quizzes/${quizId}`, {
+            response = await adminFetch(`/api/admin/quizzes/${quizId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(quizData)
             });
         } else {
             // Create new quiz
-            response = await fetch('/api/admin/quizzes', {
+            response = await adminFetch('/api/admin/quizzes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(quizData)
@@ -184,7 +233,7 @@ async function handleQuizSubmit(e) {
 // Edit quiz
 async function editQuiz(quizId) {
     try {
-        const response = await fetch(`/api/admin/quizzes/${quizId}`);
+        const response = await adminFetch(`/api/admin/quizzes/${quizId}`);
         if (!response.ok) throw new Error('Failed to load quiz');
 
         const quiz = await response.json();
@@ -205,7 +254,7 @@ async function deleteQuiz(quizId) {
     }
 
     try {
-        const response = await fetch(`/api/admin/quizzes/${quizId}`, {
+        const response = await adminFetch(`/api/admin/quizzes/${quizId}`, {
             method: 'DELETE'
         });
 

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md for version history
 - .agent-instructions/ directory with agent-specific coding guidelines
 - Added unit tests covering validation utilities and player removal answer tracking.
+- Added admin quiz CRUD API, category listing, and validation utilities for quiz management.
+- Added admin API documentation for quiz management endpoints.
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.

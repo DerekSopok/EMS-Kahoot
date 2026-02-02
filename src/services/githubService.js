@@ -67,17 +67,28 @@ class GitHubService {
         }
     }
 
+    async commitQuizzes(quizzesData, commitMessage) {
+        return this.commitQuizzesFile(quizzesData, commitMessage);
+    }
+
     generateCommitMessage(action, quizTitle = '') {
-        const timestamp = new Date().toISOString();
         switch (action) {
             case 'create':
-                return 'feat: add quiz "' + quizTitle + '" [' + timestamp + ']';
+                return 'quiz: create "' + quizTitle + '"';
             case 'update':
-                return 'chore: update quiz "' + quizTitle + '" [' + timestamp + ']';
+                return 'quiz: update "' + quizTitle + '"';
             case 'delete':
-                return 'chore: delete quiz "' + quizTitle + '" [' + timestamp + ']';
+                return 'quiz: delete "' + quizTitle + '"';
+            case 'add-question':
+                return 'quiz: add question to "' + quizTitle + '"';
+            case 'update-question':
+                return 'quiz: update question in "' + quizTitle + '"';
+            case 'delete-question':
+                return 'quiz: delete question from "' + quizTitle + '"';
+            case 'reorder-questions':
+                return 'quiz: reorder questions in "' + quizTitle + '"';
             default:
-                return 'chore: update quizzes.json [' + timestamp + ']';
+                return 'quiz: update "' + quizTitle + '"';
         }
     }
 }

@@ -57,10 +57,13 @@ class QuizService {
             this.releaseLock();
         }
 
-        // Auto-commit to GitHub (async, non-blocking)
+        // Auto-commit to GitHub
         const commitMessage = githubService.generateCommitMessage(action, quizTitle);
-        githubService.commitQuizzesFile(quizzesData, commitMessage)
-            .catch(err => console.error('Background GitHub commit failed:', err));
+        try {
+            await githubService.commitQuizzes(quizzesData, commitMessage);
+        } catch (error) {
+            console.error('GitHub commit failed:', error);
+        }
 
         return quizzesData;
     }
@@ -105,6 +108,15 @@ class QuizService {
         }));
     }
 
+    normalizeAnswerOptions(answerOptions = []) {
+        return answerOptions.map((option, index) => ({
+            id: option.id || index + 1,
+            option_text: option.option_text,
+            is_correct: option.is_correct,
+            order_index: option.order_index || index + 1
+        }));
+    }
+
     async createQuiz(quizData) {
         const quizzes = await this.loadQuizzes();
 
@@ -117,7 +129,7 @@ class QuizService {
             id: newId,
             title: quizData.title,
             description: quizData.description || '',
-            category: quizData.category || 'Other',
+            category: quizData.category || 'General',
             is_public: quizData.is_public !== false,
             created_at: new Date().toISOString(),
             questions: []
@@ -140,9 +152,9 @@ class QuizService {
         // Update quiz metadata only (not questions)
         quizzes[index] = {
             ...quizzes[index],
-            title: quizData.title || quizzes[index].title,
+            title: quizData.title !== undefined ? quizData.title : quizzes[index].title,
             description: quizData.description !== undefined ? quizData.description : quizzes[index].description,
-            category: quizData.category || quizzes[index].category,
+            category: quizData.category !== undefined ? quizData.category : quizzes[index].category,
             is_public: quizData.is_public !== undefined ? quizData.is_public : quizzes[index].is_public,
             updated_at: new Date().toISOString()
         };
@@ -193,12 +205,12 @@ class QuizService {
             points: questionData.points || 1000,
             order_index: questionData.order_index || quiz.questions.length + 1,
             image_url: questionData.image_url || null,
-            answer_options: questionData.answer_options || []
+            answer_options: this.normalizeAnswerOptions(questionData.answer_options || [])
         };
 
         quiz.questions.push(newQuestion);
 
-        await this.saveQuizzes(quizzes, 'update', quiz.title);
+        await this.saveQuizzes(quizzes, 'add-question', quiz.title);
 
         return newQuestion;
     }
@@ -219,15 +231,15 @@ class QuizService {
 
         quiz.questions[questionIndex] = {
             ...quiz.questions[questionIndex],
-            question_text: questionData.question_text || quiz.questions[questionIndex].question_text,
-            time_limit: questionData.time_limit || quiz.questions[questionIndex].time_limit,
-            points: questionData.points || quiz.questions[questionIndex].points,
+            question_text: questionData.question_text !== undefined ? questionData.question_text : quiz.questions[questionIndex].question_text,
+            time_limit: questionData.time_limit !== undefined ? questionData.time_limit : quiz.questions[questionIndex].time_limit,
+            points: questionData.points !== undefined ? questionData.points : quiz.questions[questionIndex].points,
             order_index: questionData.order_index !== undefined ? questionData.order_index : quiz.questions[questionIndex].order_index,
             image_url: questionData.image_url !== undefined ? questionData.image_url : quiz.questions[questionIndex].image_url,
-            answer_options: questionData.answer_options || quiz.questions[questionIndex].answer_options
+            answer_options: questionData.answer_options ? this.normalizeAnswerOptions(questionData.answer_options) : quiz.questions[questionIndex].answer_options
         };
 
-        await this.saveQuizzes(quizzes, 'update', quiz.title);
+        await this.saveQuizzes(quizzes, 'update-question', quiz.title);
 
         return quiz.questions[questionIndex];
     }
@@ -254,7 +266,7 @@ class QuizService {
             q.order_index = idx + 1;
         });
 
-        await this.saveQuizzes(quizzes, 'update', quiz.title);
+        await this.saveQuizzes(quizzes, 'delete-question', quiz.title);
 
         return deletedQuestion;
     }
@@ -283,7 +295,7 @@ class QuizService {
             return question;
         });
 
-        await this.saveQuizzes(quizzes, 'update', quiz.title);
+        await this.saveQuizzes(quizzes, 'reorder-questions', quiz.title);
 
         return quiz.questions;
     }

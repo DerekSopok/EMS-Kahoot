@@ -1,5 +1,6 @@
--- EMS Kahoot Database Schema
+-- EMS Kahoot Database Schema (Legacy/Archived)
 -- Migration 001: Initial Schema
+-- NOTE: This file is retained for reference only and is not used in production.
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (

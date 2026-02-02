@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Security
-- Nothing yet
+- Added admin token authentication for admin APIs and hardened quiz rendering against XSS.
 
 ---
 

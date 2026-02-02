@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Editor - EMS Kahoot</title>
+    <link rel="stylesheet" href="/css/questions.css">
+</head>
+<body>
+    <div class="editor-container">
+        <header class="editor-header">
+            <div class="header-left">
+                <a href="/admin" class="btn btn-secondary">← Back to Quizzes</a>
+                <div class="quiz-info">
+                    <h1 id="quizTitle">Loading...</h1>
+                    <p id="quizMeta"></p>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="addQuestionBtn">+ Add Question</button>
+        </header>
+
+        <div class="editor-layout">
+            <!-- Left: Question List -->
+            <div class="question-list">
+                <h2>Questions</h2>
+                <div id="questionsContainer" class="questions">
+                    <div class="loading">Loading questions...</div>
+                </div>
+            </div>
+
+            <!-- Right: Question Editor -->
+            <div class="question-editor">
+                <div id="editorPlaceholder" class="editor-placeholder">
+                    <h3>Select a question to edit</h3>
+                    <p>or click "Add Question" to create a new one</p>
+                </div>
+
+                <div id="editorForm" class="editor-form" style="display: none;">
+                    <form id="questionForm">
+                        <input type="hidden" id="questionId">
+
+                        <div class="form-group">
+                            <label for="questionText">Question *</label>
+                            <textarea id="questionText" required minlength="10" maxlength="500" rows="3"></textarea>
+                            <small>10-500 characters</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="timeLimit">Time Limit *</label>
+                                <select id="timeLimit" required>
+                                    <option value="10">10 seconds</option>
+                                    <option value="20" selected>20 seconds</option>
+                                    <option value="30">30 seconds</option>
+                                    <option value="45">45 seconds</option>
+                                    <option value="60">60 seconds</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="points">Points *</label>
+                                <input type="number" id="points" required min="100" max="2000" step="100" value="1000">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="imageUrl">Image URL (optional)</label>
+                            <input type="url" id="imageUrl" placeholder="https://example.com/image.jpg">
+                        </div>
+
+                        <div class="answers-section">
+                            <h3>Answer Options *</h3>
+                            <p class="help-text">Provide exactly 4 answers. Mark one as correct.</p>
+
+                            <div class="answer-option">
+                                <span class="answer-label">A</span>
+                                <input type="text" class="answer-text" id="answer0" required maxlength="200" placeholder="First answer">
+                                <label class="radio-label">
+                                    <input type="radio" name="correctAnswer" value="0" required>
+                                    <span>Correct</span>
+                                </label>
+                            </div>
+
+                            <div class="answer-option">
+                                <span class="answer-label">B</span>
+                                <input type="text" class="answer-text" id="answer1" required maxlength="200" placeholder="Second answer">
+                                <label class="radio-label">
+                                    <input type="radio" name="correctAnswer" value="1">
+                                    <span>Correct</span>
+                                </label>
+                            </div>
+
+                            <div class="answer-option">
+                                <span class="answer-label">C</span>
+                                <input type="text" class="answer-text" id="answer2" required maxlength="200" placeholder="Third answer">
+                                <label class="radio-label">
+                                    <input type="radio" name="correctAnswer" value="2">
+                                    <span>Correct</span>
+                                </label>
+                            </div>
+
+                            <div class="answer-option">
+                                <span class="answer-label">D</span>
+                                <input type="text" class="answer-text" id="answer3" required maxlength="200" placeholder="Fourth answer">
+                                <label class="radio-label">
+                                    <input type="radio" name="correctAnswer" value="3">
+                                    <span>Correct</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-danger" id="deleteQuestionBtn" style="display: none;">Delete Question</button>
+                            <div style="flex: 1;"></div>
+                            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Question</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/admin/questions.js"></script>
+</body>
+</html>

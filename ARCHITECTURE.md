@@ -46,6 +46,11 @@ EMS Kahoot is a real-time multiplayer quiz game designed for EMS (Emergency Medi
 - **Platform**: Render.com (free tier)
 - **Database**: Render PostgreSQL addon
 
+#### Render Build/Start Commands
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Notes**: Legacy Postgres migration/seed scripts are archived and should not be part of the build pipeline.
+
 ## Database Schema
 
 ### Current State (MongoDB)

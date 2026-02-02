@@ -7,9 +7,9 @@
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate": "node db/migrations/run.js",
-    "seed": "node db/seeds/seed.js",
-    "reset-db": "npm run migrate && npm run seed"
+    "migrate": "node -e \"console.log('Migrations are archived; no database action performed.')\"",
+    "seed": "node -e \"console.log('Seeds are archived; no database action performed.')\"",
+    "reset-db": "node -e \"console.log('Reset DB has been removed; no database action performed.')\""
   },
   "author": "",
   "license": "ISC",

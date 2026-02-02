@@ -16,13 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - .agent-instructions/ directory with agent-specific coding guidelines
 
 ### Changed
-- Nothing yet
+- Archived legacy Postgres migration/seed tooling and updated deployment guidance.
 
 ### Deprecated
 - Nothing yet
 
 ### Removed
-- Nothing yet
+- Build pipeline no longer runs migration/seed steps.
 
 ### Fixed
 - Nothing yet

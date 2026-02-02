@@ -1,281 +1,236 @@
-// Admin page functionality
 let quizzes = [];
-let currentQuiz = null;
 
-// DOM elements
-const quizzesContainer = document.getElementById('quizzesContainer');
-const createQuizBtn = document.getElementById('createQuizBtn');
-const quizModal = document.getElementById('quizModal');
-const quizForm = document.getElementById('quizForm');
-const modalTitle = document.getElementById('modalTitle');
-const closeBtn = document.querySelector('.close');
-const cancelBtn = document.getElementById('cancelBtn');
-const categoryFilter = document.getElementById('categoryFilter');
-const searchInput = document.getElementById('searchInput');
 const adminTokenKey = 'adminToken';
+const loginPrompt = document.getElementById('loginPrompt');
+const loginForm = document.getElementById('loginForm');
+const loginMessage = document.getElementById('loginMessage');
+const tokenInput = document.getElementById('adminTokenInput');
+const dashboard = document.getElementById('dashboard');
+const quizList = document.getElementById('quiz-list');
+const emptyState = document.getElementById('quiz-empty');
+const statusMessage = document.getElementById('statusMessage');
+const createQuizBtn = document.getElementById('createQuizBtn');
+const emptyCreateBtn = document.getElementById('emptyCreateBtn');
+const tableWrapper = document.querySelector('.table-wrapper');
 
-function promptForAdminToken(forcePrompt = false) {
-    let token = sessionStorage.getItem(adminTokenKey);
+document.addEventListener('DOMContentLoaded', () => {
+    createQuizBtn.addEventListener('click', handleCreateQuiz);
+    emptyCreateBtn.addEventListener('click', handleCreateQuiz);
+    loginForm.addEventListener('submit', handleLoginSubmit);
 
-    if (forcePrompt || !token) {
-        token = window.prompt('Enter the admin token to access quiz management:');
-        if (token) {
-            token = token.trim();
-        }
-
-        if (token) {
-            sessionStorage.setItem(adminTokenKey, token);
-        } else {
-            sessionStorage.removeItem(adminTokenKey);
-            token = '';
-        }
+    if (getToken()) {
+        showDashboard();
+        loadQuizzes();
+    } else {
+        showLoginPrompt();
     }
+});
 
-    return token;
+function getToken() {
+    return sessionStorage.getItem(adminTokenKey) || '';
+}
+
+function handleCreateQuiz() {
+    window.location.href = '/admin/quiz-editor.html?quizId=new';
+}
+
+function showLoginPrompt(message = '') {
+    loginPrompt.classList.remove('hidden');
+    dashboard.classList.add('hidden');
+    loginMessage.textContent = message;
+    if (message) {
+        loginMessage.classList.add('visible');
+    } else {
+        loginMessage.classList.remove('visible');
+    }
+}
+
+function showDashboard() {
+    loginPrompt.classList.add('hidden');
+    dashboard.classList.remove('hidden');
+}
+
+function setStatus(type, message) {
+    statusMessage.textContent = message;
+    statusMessage.className = `status ${type}`;
+}
+
+async function handleLoginSubmit(event) {
+    event.preventDefault();
+    const token = tokenInput.value.trim();
+    if (!token) {
+        showLoginPrompt('Token is required.');
+        return;
+    }
+    sessionStorage.setItem(adminTokenKey, token);
+    tokenInput.value = '';
+    showDashboard();
+    await loadQuizzes();
 }
 
 async function adminFetch(url, options = {}) {
-    let token = promptForAdminToken();
+    const token = getToken();
     if (!token) {
-        throw new Error('Admin token is required to continue.');
+        showLoginPrompt('Please enter your admin token.');
+        throw new Error('Admin token required.');
     }
 
     const headers = { ...(options.headers || {}), 'X-Admin-Token': token };
-    let response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { ...options, headers });
 
     if (response.status === 401) {
         sessionStorage.removeItem(adminTokenKey);
-        token = promptForAdminToken(true);
-        if (!token) {
-            throw new Error('Admin token is required to continue.');
-        }
-        const retryHeaders = { ...(options.headers || {}), 'X-Admin-Token': token };
-        response = await fetch(url, { ...options, headers: retryHeaders });
+        showLoginPrompt('Session expired. Please enter your token again.');
+        throw new Error('Unauthorized');
     }
 
     return response;
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    const token = promptForAdminToken();
-    if (!token) {
-        quizzesContainer.innerHTML = '<div class="loading">Admin token required to access this page.</div>';
+async function loadQuizzes() {
+    try {
+        setStatus('info', 'Loading quizzes...');
+        const response = await adminFetch('/api/admin/quizzes');
+        if (!response.ok) {
+            throw new Error('Failed to load quizzes');
+        }
+        quizzes = await response.json();
+        renderQuizList(quizzes);
+        setStatus('success', 'Quizzes loaded.');
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        setStatus('error', 'Unable to load quizzes. Please try again.');
+    }
+}
+
+function renderQuizList(quizzesToShow) {
+    while (quizList.firstChild) {
+        quizList.removeChild(quizList.firstChild);
+    }
+
+    if (!quizzesToShow.length) {
+        emptyState.classList.remove('hidden');
+        tableWrapper.classList.add('hidden');
         return;
     }
 
-    loadQuizzes();
-    setupEventListeners();
-});
+    emptyState.classList.add('hidden');
+    tableWrapper.classList.remove('hidden');
 
-// Event listeners
-function setupEventListeners() {
-    createQuizBtn.addEventListener('click', () => openQuizModal());
-    closeBtn.addEventListener('click', closeQuizModal);
-    cancelBtn.addEventListener('click', closeQuizModal);
-    quizForm.addEventListener('submit', handleQuizSubmit);
-    categoryFilter.addEventListener('change', filterQuizzes);
-    searchInput.addEventListener('input', filterQuizzes);
+    quizzesToShow.forEach((quiz) => {
+        const row = document.createElement('tr');
 
-    // Close modal when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target === quizModal) {
-            closeQuizModal();
-        }
+        row.appendChild(createCell(quiz.title, 'Title'));
+        row.appendChild(createCell(quiz.category || 'General', 'Category'));
+        row.appendChild(createCell(String(quiz.questionCount || 0), 'Questions'));
+
+        const actionsCell = document.createElement('td');
+        actionsCell.setAttribute('data-label', 'Actions');
+        actionsCell.classList.add('table-actions');
+
+        const editButton = document.createElement('button');
+        editButton.className = 'btn btn-sm btn-primary';
+        editButton.type = 'button';
+        editButton.textContent = 'Edit';
+        editButton.addEventListener('click', () => editQuiz(quiz.id));
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn btn-sm btn-danger';
+        deleteButton.type = 'button';
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', () => deleteQuiz(quiz.id));
+
+        const duplicateButton = document.createElement('button');
+        duplicateButton.className = 'btn btn-sm btn-secondary';
+        duplicateButton.type = 'button';
+        duplicateButton.textContent = 'Duplicate';
+        duplicateButton.addEventListener('click', () => duplicateQuiz(quiz.id));
+
+        actionsCell.append(editButton, duplicateButton, deleteButton);
+        row.appendChild(actionsCell);
+        quizList.appendChild(row);
     });
 }
 
-// Load all quizzes
-async function loadQuizzes() {
-    try {
-        const response = await adminFetch('/api/admin/quizzes');
-        if (!response.ok) throw new Error('Failed to load quizzes');
-
-        quizzes = await response.json();
-        displayQuizzes(quizzes);
-    } catch (error) {
-        console.error('Error loading quizzes:', error);
-        quizzesContainer.innerHTML = '<div class="loading">Error loading quizzes. Please refresh the page.</div>';
-    }
+function createCell(text, label) {
+    const cell = document.createElement('td');
+    cell.setAttribute('data-label', label);
+    cell.textContent = text;
+    return cell;
 }
 
-// Display quizzes
-function displayQuizzes(quizzesToShow) {
-    if (quizzesToShow.length === 0) {
-        quizzesContainer.innerHTML = `
-            <div class="empty-state">
-                <h3>No quizzes found</h3>
-                <p>Create your first quiz to get started!</p>
-                <button class="btn btn-primary" onclick="openQuizModal()">Create New Quiz</button>
-            </div>
-        `;
-        return;
-    }
-
-    quizzesContainer.innerHTML = quizzesToShow.map(quiz => `
-        <div class="quiz-card" data-id="${quiz.id}">
-            <div class="quiz-header">
-                <h3 class="quiz-title">${escapeHtml(quiz.title)}</h3>
-                <span class="quiz-category">${escapeHtml(quiz.category)}</span>
-            </div>
-            <p class="quiz-description">${escapeHtml(quiz.description) || 'No description'}</p>
-            <div class="quiz-stats">
-                <span>📝 ${quiz.questions ? quiz.questions.length : 0} questions</span>
-                <span>${quiz.is_public ? '🌐 Public' : '🔒 Private'}</span>
-            </div>
-            <div class="quiz-actions">
-                <button class="btn btn-sm btn-primary" onclick="editQuiz(${quiz.id})">Edit</button>
-                <button class="btn btn-sm btn-success" onclick="manageQuestions(${quiz.id})">Questions</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteQuiz(${quiz.id})">Delete</button>
-            </div>
-        </div>
-    `).join('');
+function editQuiz(quizId) {
+    window.location.href = `/admin/quiz-editor.html?quizId=${quizId}`;
 }
 
-// Filter quizzes
-function filterQuizzes() {
-    const category = categoryFilter.value;
-    const searchTerm = searchInput.value.toLowerCase();
-
-    let filtered = quizzes;
-
-    if (category) {
-        filtered = filtered.filter(q => q.category === category);
-    }
-
-    if (searchTerm) {
-        filtered = filtered.filter(q =>
-            q.title.toLowerCase().includes(searchTerm) ||
-            (q.description && q.description.toLowerCase().includes(searchTerm))
-        );
-    }
-
-    displayQuizzes(filtered);
-}
-
-// Open quiz modal
-function openQuizModal(quiz = null) {
-    currentQuiz = quiz;
-
-    if (quiz) {
-        modalTitle.textContent = 'Edit Quiz';
-        document.getElementById('quizId').value = quiz.id;
-        document.getElementById('quizTitle').value = quiz.title;
-        document.getElementById('quizDescription').value = quiz.description || '';
-        document.getElementById('quizCategory').value = quiz.category;
-        document.getElementById('quizPublic').checked = quiz.is_public;
-    } else {
-        modalTitle.textContent = 'Create New Quiz';
-        quizForm.reset();
-        document.getElementById('quizId').value = '';
-    }
-
-    quizModal.classList.add('show');
-}
-
-// Close quiz modal
-function closeQuizModal() {
-    quizModal.classList.remove('show');
-    quizForm.reset();
-    currentQuiz = null;
-}
-
-// Handle quiz form submission
-async function handleQuizSubmit(e) {
-    e.preventDefault();
-
-    const quizId = document.getElementById('quizId').value;
-    const quizData = {
-        title: document.getElementById('quizTitle').value.trim(),
-        description: document.getElementById('quizDescription').value.trim(),
-        category: document.getElementById('quizCategory').value,
-        is_public: document.getElementById('quizPublic').checked
-    };
-
-    try {
-        let response;
-        if (quizId) {
-            // Update existing quiz
-            response = await adminFetch(`/api/admin/quizzes/${quizId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(quizData)
-            });
-        } else {
-            // Create new quiz
-            response = await adminFetch('/api/admin/quizzes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(quizData)
-            });
-        }
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to save quiz');
-        }
-
-        const savedQuiz = await response.json();
-        alert(`Quiz "${savedQuiz.title}" saved successfully!`);
-        closeQuizModal();
-        await loadQuizzes();
-
-        // If this was a new quiz, redirect to question editor
-        if (!quizId) {
-            manageQuestions(savedQuiz.id);
-        }
-    } catch (error) {
-        console.error('Error saving quiz:', error);
-        alert('Error: ' + error.message);
-    }
-}
-
-// Edit quiz
-async function editQuiz(quizId) {
-    try {
-        const response = await adminFetch(`/api/admin/quizzes/${quizId}`);
-        if (!response.ok) throw new Error('Failed to load quiz');
-
-        const quiz = await response.json();
-        openQuizModal(quiz);
-    } catch (error) {
-        console.error('Error loading quiz:', error);
-        alert('Error loading quiz: ' + error.message);
-    }
-}
-
-// Delete quiz
 async function deleteQuiz(quizId) {
-    const quiz = quizzes.find(q => q.id === quizId);
-    if (!quiz) return;
+    const quiz = quizzes.find((item) => item.id === quizId);
+    if (!quiz) {
+        return;
+    }
 
-    if (!confirm(`Are you sure you want to delete "${quiz.title}"? This cannot be undone.`)) {
+    const confirmDelete = window.confirm(`Delete "${quiz.title}"? This cannot be undone.`);
+    if (!confirmDelete) {
         return;
     }
 
     try {
-        const response = await adminFetch(`/api/admin/quizzes/${quizId}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Failed to delete quiz');
-
-        alert('Quiz deleted successfully!');
+        setStatus('info', 'Deleting quiz...');
+        const response = await adminFetch(`/api/admin/quizzes/${quizId}`, { method: 'DELETE' });
+        if (!response.ok) {
+            throw new Error('Failed to delete quiz');
+        }
         await loadQuizzes();
+        setStatus('success', 'Quiz deleted.');
     } catch (error) {
         console.error('Error deleting quiz:', error);
-        alert('Error deleting quiz: ' + error.message);
+        setStatus('error', 'Unable to delete quiz.');
     }
 }
 
-// Manage questions - redirect to question editor
-function manageQuestions(quizId) {
-    window.location.href = `/admin/questions.html?quizId=${quizId}`;
-}
+async function duplicateQuiz(quizId) {
+    try {
+        setStatus('info', 'Duplicating quiz...');
+        const quizResponse = await adminFetch(`/api/admin/quizzes/${quizId}`);
+        if (!quizResponse.ok) {
+            throw new Error('Failed to load quiz');
+        }
+        const quiz = await quizResponse.json();
+        const newQuizResponse = await adminFetch('/api/admin/quizzes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: `${quiz.title} (Copy)`,
+                description: quiz.description || '',
+                category: quiz.category || 'General',
+                is_public: quiz.is_public !== false
+            })
+        });
 
-// Utility function to escape HTML
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+        if (!newQuizResponse.ok) {
+            throw new Error('Failed to create duplicate quiz');
+        }
+
+        const newQuiz = await newQuizResponse.json();
+        if (Array.isArray(quiz.questions) && quiz.questions.length) {
+            for (const question of quiz.questions) {
+                await adminFetch(`/api/admin/quizzes/${newQuiz.id}/questions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question_text: question.question_text,
+                        time_limit: question.time_limit,
+                        points: question.points,
+                        answer_options: question.answer_options
+                    })
+                });
+            }
+        }
+
+        await loadQuizzes();
+        setStatus('success', 'Quiz duplicated.');
+    } catch (error) {
+        console.error('Error duplicating quiz:', error);
+        setStatus('error', 'Unable to duplicate quiz.');
+    }
 }

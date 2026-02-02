@@ -6,6 +6,10 @@
 - **Last Session**: 2026-02-03
 - **Branch**: update-agent-docs
 - **Commit**: See `git log -1 --oneline` for current head
+- **Last Agent**: GPT-5.2-Codex
+- **Last Session**: 2026-02-03
+- **Branch**: claude/kahoot-quiz-setup-08CqB
+- **Commit**: f25432d — "Add seed data format documentation"
 
 ## Active Task
 
@@ -51,6 +55,20 @@ None
 **Next Agent Should**: Keep the build pipeline JSON/asset oriented; do not reintroduce Postgres migration/seed steps unless explicitly needed.
 
 ---
+### Session 7 (2026-02-03) - Seed Data Format Documentation
+
+**Completed**: Documented the seed JSON layout and optional validation helper.
+
+**Docs Added**:
+- `db/seeds/README.md`: explains required `quizzes.json` plus optional companion files.
+- `docs/seed-data-format.md`: outlines required/optional fields for quizzes, questions, and answer options.
+
+**Optional Tooling**:
+- `scripts/validate-seeds.js`: dependency-free seed JSON validator (optional usage).
+
+**Notes**:
+- No runtime dependencies added.
+- Seed validation is not wired into CI by default.
 
 ### Session 6 (2026-02-02) - Quiz Management System with GitHub Auto-Commit
 

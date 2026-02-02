@@ -6,13 +6,13 @@
  */
 
 const GameManager = require('./gameManager');
+const quizService = require('../services/quizService');
 
 /**
  * Initialize Socket.IO event handlers
  * @param {Object} io - Socket.IO server instance
- * @param {Object} db - PostgreSQL database pool
  */
-function initializeSocketEvents(io, db) {
+function initializeSocketEvents(io) {
     const gameManager = new GameManager();
 
     io.on('connection', (socket) => {
@@ -31,39 +31,10 @@ function initializeSocketEvents(io, db) {
             try {
                 const { quizId } = data;
 
-                // Fetch quiz and questions from database
-                const quizQuery = `
-                    SELECT q.*,
-                           json_agg(
-                               json_build_object(
-                                   'id', qu.id,
-                                   'question_text', qu.question_text,
-                                   'time_limit', qu.time_limit,
-                                   'points', qu.points,
-                                   'order_index', qu.order_index,
-                                   'answer_options', (
-                                       SELECT json_agg(
-                                           json_build_object(
-                                               'id', ao.id,
-                                               'option_text', ao.option_text,
-                                               'is_correct', ao.is_correct,
-                                               'order_index', ao.order_index
-                                           ) ORDER BY ao.order_index
-                                       )
-                                       FROM answer_options ao
-                                       WHERE ao.question_id = qu.id
-                                   )
-                               ) ORDER BY qu.order_index
-                           ) as questions
-                    FROM quizzes q
-                    LEFT JOIN questions qu ON q.id = qu.quiz_id
-                    WHERE q.id = $1
-                    GROUP BY q.id
-                `;
+                // Fetch quiz and questions from JSON file storage
+                const quiz = await quizService.getQuizById(quizId);
 
-                const result = await db.query(quizQuery, [quizId]);
-
-                if (result.rows.length === 0) {
+                if (!quiz) {
                     socket.emit('host:create-room', {
                         success: false,
                         error: 'Quiz not found'
@@ -71,10 +42,10 @@ function initializeSocketEvents(io, db) {
                     return;
                 }
 
-                const quiz = result.rows[0];
-                const questions = quiz.questions;
+                // Transform questions to match expected format
+                const questions = quiz.questions || [];
 
-                if (!questions || questions.length === 0) {
+                if (questions.length === 0) {
                     socket.emit('host:create-room', {
                         success: false,
                         error: 'Quiz has no questions'
@@ -82,8 +53,23 @@ function initializeSocketEvents(io, db) {
                     return;
                 }
 
+                // Transform questions to match the format expected by gameManager
+                const formattedQuestions = questions.map((q, index) => ({
+                    id: q.id,
+                    question_text: q.question_text,
+                    time_limit: q.time_limit || 20,
+                    points: q.points || 1000,
+                    order_index: q.order_index || index + 1,
+                    answer_options: (q.answer_options || []).map((opt, optIndex) => ({
+                        id: opt.id || optIndex + 1,
+                        option_text: opt.option_text,
+                        is_correct: opt.is_correct,
+                        order_index: opt.order_index || optIndex + 1
+                    }))
+                }));
+
                 // Create room
-                const room = gameManager.createRoom(socket.id, quizId, questions);
+                const room = gameManager.createRoom(socket.id, quizId, formattedQuestions);
 
                 // Join the room
                 socket.join(room.code);
@@ -94,7 +80,7 @@ function initializeSocketEvents(io, db) {
                     success: true,
                     roomCode: room.code,
                     quizTitle: quiz.title,
-                    questionCount: questions.length
+                    questionCount: formattedQuestions.length
                 });
 
             } catch (error) {

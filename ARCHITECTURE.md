@@ -53,6 +53,27 @@ EMS Kahoot is a real-time multiplayer quiz game designed for EMS (Emergency Medi
 
 ## Database Schema
 
+## Data Storage Contract (Current)
+
+EMS Kahoot stores quiz content in a committed JSON seed file and keeps all live game state in memory:
+
+- **Persistent (committed to GitHub):** `db/seeds/quizzes.json` contains quiz definitions, questions, and answer options.
+- **Ephemeral (in-memory only):** game sessions, players, player answers, and leaderboards live in the Socket.IO game manager (`src/socket/gameManager.js`, with legacy helpers in `server/utils/*`).
+- **Users:** user accounts are not persisted in the current implementation (no user storage is active).
+
+### Table-to-Storage Mapping
+
+| Former DB Table | Current Storage |
+| --- | --- |
+| `quizzes`, `questions`, `answer_options` | `db/seeds/quizzes.json` (persistent JSON) |
+| `game_sessions`, `players`, `player_answers` | In-memory maps in `src/socket/gameManager.js` (legacy: `server/utils/*`) |
+| `users` | Not persisted (out of scope for current storage) |
+
+### Data Lifecycle
+
+- **Survives deploys:** Quiz content in `db/seeds/quizzes.json` (tracked in Git).
+- **Ephemeral:** Active sessions, player state, answers, and leaderboards reset on server restart.
+
 ### Current State (MongoDB)
 The existing codebase uses MongoDB with the following structure:
 

@@ -11,6 +11,7 @@ const { initializeSocketEvents } = require('../src/socket/events');
 //Import services
 const quizService = require('../src/services/quizService');
 const adminAuth = require('../src/middleware/adminAuth');
+const { CATEGORIES, validateQuiz, validateQuestion } = require('../src/utils/quizValidation');
 
 
 const publicPath = path.join(__dirname, '../public');
@@ -22,6 +23,21 @@ app.use(express.static(publicPath));
 app.use(express.json());
 
 app.use('/api/admin', adminAuth);
+
+function buildValidationErrorResponse(errors) {
+    return { error: 'Validation failed', details: errors };
+}
+
+function sanitizeAnswerOptions(answerOptions) {
+    if (!Array.isArray(answerOptions)) {
+        return answerOptions;
+    }
+
+    return answerOptions.map(option => ({
+        option_text: typeof option.option_text === 'string' ? option.option_text.trim() : option.option_text,
+        is_correct: Boolean(option.is_correct)
+    }));
+}
 
 // API Routes
 // Get all quizzes (using JSON file storage)
@@ -68,7 +84,15 @@ app.get('/api/quizzes/:id', async (req, res) => {
 app.get('/api/admin/quizzes', async (req, res) => {
     try {
         const quizzes = await quizService.loadQuizzes();
-        res.json(quizzes);
+        const summary = quizzes.map(quiz => ({
+            id: quiz.id,
+            title: quiz.title,
+            description: quiz.description || '',
+            category: quiz.category || 'General',
+            questionCount: quiz.questions ? quiz.questions.length : 0,
+            createdAt: quiz.created_at
+        }));
+        res.json(summary);
     } catch (error) {
         console.error('Error loading quizzes:', error);
         res.status(500).json({ error: 'Failed to load quizzes' });
@@ -95,19 +119,20 @@ app.get('/api/admin/quizzes/:id', async (req, res) => {
 // Create a new quiz
 app.post('/api/admin/quizzes', async (req, res) => {
     try {
-        // Validate required fields
-        if (!req.body.title || req.body.title.trim().length < 3) {
-            return res.status(400).json({ error: 'Title must be at least 3 characters' });
-        }
-
-        if (req.body.title.length > 200) {
-            return res.status(400).json({ error: 'Title must not exceed 200 characters' });
+        const quizInput = {
+            title: typeof req.body.title === 'string' ? req.body.title.trim() : req.body.title,
+            description: typeof req.body.description === 'string' ? req.body.description.trim() : req.body.description,
+            category: typeof req.body.category === 'string' ? req.body.category : req.body.category
+        };
+        const { valid, errors } = validateQuiz(quizInput);
+        if (!valid) {
+            return res.status(400).json(buildValidationErrorResponse(errors));
         }
 
         const newQuiz = await quizService.createQuiz({
-            title: req.body.title.trim(),
-            description: req.body.description || '',
-            category: req.body.category || 'Other',
+            title: quizInput.title,
+            description: quizInput.description || '',
+            category: quizInput.category || 'General',
             is_public: req.body.is_public !== false
         });
 
@@ -122,17 +147,34 @@ app.post('/api/admin/quizzes', async (req, res) => {
 app.put('/api/admin/quizzes/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        const existingQuiz = await quizService.getQuizById(id);
 
-        // Validate required fields
-        if (req.body.title && req.body.title.trim().length < 3) {
-            return res.status(400).json({ error: 'Title must be at least 3 characters' });
+        if (!existingQuiz) {
+            return res.status(404).json({ error: 'Quiz not found' });
         }
 
-        if (req.body.title && req.body.title.length > 200) {
-            return res.status(400).json({ error: 'Title must not exceed 200 characters' });
+        const updates = {};
+        if (req.body.title !== undefined) {
+            updates.title = typeof req.body.title === 'string' ? req.body.title.trim() : req.body.title;
+        }
+        if (req.body.description !== undefined) {
+            updates.description = typeof req.body.description === 'string' ? req.body.description.trim() : req.body.description;
+        }
+        if (req.body.category !== undefined) {
+            updates.category = typeof req.body.category === 'string' ? req.body.category : req.body.category;
         }
 
-        const updatedQuiz = await quizService.updateQuiz(id, req.body);
+        const mergedQuiz = {
+            title: updates.title !== undefined ? updates.title : existingQuiz.title,
+            description: updates.description !== undefined ? updates.description : existingQuiz.description,
+            category: updates.category !== undefined ? updates.category : existingQuiz.category
+        };
+        const { valid, errors } = validateQuiz(mergedQuiz);
+        if (!valid) {
+            return res.status(400).json(buildValidationErrorResponse(errors));
+        }
+
+        const updatedQuiz = await quizService.updateQuiz(id, updates);
         res.json(updatedQuiz);
     } catch (error) {
         if (error.message === 'Quiz not found') {
@@ -147,8 +189,8 @@ app.put('/api/admin/quizzes/:id', async (req, res) => {
 app.delete('/api/admin/quizzes/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const deletedQuiz = await quizService.deleteQuiz(id);
-        res.json(deletedQuiz);
+        await quizService.deleteQuiz(id);
+        res.json({ success: true });
     } catch (error) {
         if (error.message === 'Quiz not found') {
             return res.status(404).json({ error: error.message });
@@ -162,39 +204,18 @@ app.delete('/api/admin/quizzes/:id', async (req, res) => {
 app.post('/api/admin/quizzes/:id/questions', async (req, res) => {
     try {
         const quizId = parseInt(req.params.id);
-
-        // Validate question text
-        if (!req.body.question_text || req.body.question_text.trim().length < 10) {
-            return res.status(400).json({ error: 'Question must be at least 10 characters' });
+        const questionInput = {
+            question_text: typeof req.body.question_text === 'string' ? req.body.question_text.trim() : req.body.question_text,
+            time_limit: req.body.time_limit,
+            points: req.body.points,
+            answer_options: sanitizeAnswerOptions(req.body.answer_options)
+        };
+        const { valid, errors } = validateQuestion(questionInput);
+        if (!valid) {
+            return res.status(400).json(buildValidationErrorResponse(errors));
         }
 
-        if (req.body.question_text.length > 500) {
-            return res.status(400).json({ error: 'Question must not exceed 500 characters' });
-        }
-
-        // Validate time limit
-        const timeLimit = req.body.time_limit || 20;
-        if (timeLimit < 10 || timeLimit > 60) {
-            return res.status(400).json({ error: 'Time limit must be between 10 and 60 seconds' });
-        }
-
-        // Validate points
-        const points = req.body.points || 1000;
-        if (points < 100 || points > 2000) {
-            return res.status(400).json({ error: 'Points must be between 100 and 2000' });
-        }
-
-        // Validate answer options
-        if (!req.body.answer_options || req.body.answer_options.length !== 4) {
-            return res.status(400).json({ error: 'Must provide exactly 4 answer options' });
-        }
-
-        const correctCount = req.body.answer_options.filter(a => a.is_correct).length;
-        if (correctCount !== 1) {
-            return res.status(400).json({ error: 'Must have exactly 1 correct answer' });
-        }
-
-        const newQuestion = await quizService.addQuestion(quizId, req.body);
+        const newQuestion = await quizService.addQuestion(quizId, questionInput);
         res.status(201).json(newQuestion);
     } catch (error) {
         if (error.message === 'Quiz not found') {
@@ -210,39 +231,43 @@ app.put('/api/admin/quizzes/:quizId/questions/:questionId', async (req, res) => 
     try {
         const quizId = parseInt(req.params.quizId);
         const questionId = parseInt(req.params.questionId);
+        const quiz = await quizService.getQuizById(quizId);
 
-        // Validate question text if provided
-        if (req.body.question_text && req.body.question_text.trim().length < 10) {
-            return res.status(400).json({ error: 'Question must be at least 10 characters' });
+        if (!quiz) {
+            return res.status(404).json({ error: 'Quiz not found' });
         }
 
-        if (req.body.question_text && req.body.question_text.length > 500) {
-            return res.status(400).json({ error: 'Question must not exceed 500 characters' });
+        const existingQuestion = quiz.questions?.find(question => question.id === questionId);
+        if (!existingQuestion) {
+            return res.status(404).json({ error: 'Question not found' });
         }
 
-        // Validate time limit if provided
-        if (req.body.time_limit && (req.body.time_limit < 10 || req.body.time_limit > 60)) {
-            return res.status(400).json({ error: 'Time limit must be between 10 and 60 seconds' });
+        const updates = {};
+        if (req.body.question_text !== undefined) {
+            updates.question_text = typeof req.body.question_text === 'string' ? req.body.question_text.trim() : req.body.question_text;
+        }
+        if (req.body.time_limit !== undefined) {
+            updates.time_limit = req.body.time_limit;
+        }
+        if (req.body.points !== undefined) {
+            updates.points = req.body.points;
+        }
+        if (req.body.answer_options !== undefined) {
+            updates.answer_options = sanitizeAnswerOptions(req.body.answer_options);
         }
 
-        // Validate points if provided
-        if (req.body.points && (req.body.points < 100 || req.body.points > 2000)) {
-            return res.status(400).json({ error: 'Points must be between 100 and 2000' });
+        const mergedQuestion = {
+            question_text: updates.question_text !== undefined ? updates.question_text : existingQuestion.question_text,
+            time_limit: updates.time_limit !== undefined ? updates.time_limit : existingQuestion.time_limit,
+            points: updates.points !== undefined ? updates.points : existingQuestion.points,
+            answer_options: updates.answer_options !== undefined ? updates.answer_options : existingQuestion.answer_options
+        };
+        const { valid, errors } = validateQuestion(mergedQuestion);
+        if (!valid) {
+            return res.status(400).json(buildValidationErrorResponse(errors));
         }
 
-        // Validate answer options if provided
-        if (req.body.answer_options) {
-            if (req.body.answer_options.length !== 4) {
-                return res.status(400).json({ error: 'Must provide exactly 4 answer options' });
-            }
-
-            const correctCount = req.body.answer_options.filter(a => a.is_correct).length;
-            if (correctCount !== 1) {
-                return res.status(400).json({ error: 'Must have exactly 1 correct answer' });
-            }
-        }
-
-        const updatedQuestion = await quizService.updateQuestion(quizId, questionId, req.body);
+        const updatedQuestion = await quizService.updateQuestion(quizId, questionId, updates);
         res.json(updatedQuestion);
     } catch (error) {
         if (error.message === 'Quiz not found' || error.message === 'Question not found') {
@@ -259,8 +284,8 @@ app.delete('/api/admin/quizzes/:quizId/questions/:questionId', async (req, res) 
         const quizId = parseInt(req.params.quizId);
         const questionId = parseInt(req.params.questionId);
 
-        const deletedQuestion = await quizService.deleteQuestion(quizId, questionId);
-        res.json(deletedQuestion);
+        await quizService.deleteQuestion(quizId, questionId);
+        res.json({ success: true });
     } catch (error) {
         if (error.message === 'Quiz not found' || error.message === 'Question not found') {
             return res.status(404).json({ error: error.message });
@@ -274,12 +299,30 @@ app.delete('/api/admin/quizzes/:quizId/questions/:questionId', async (req, res) 
 app.put('/api/admin/quizzes/:id/questions/reorder', async (req, res) => {
     try {
         const quizId = parseInt(req.params.id);
+        const quiz = await quizService.getQuizById(quizId);
 
         if (!req.body.questionIds || !Array.isArray(req.body.questionIds)) {
             return res.status(400).json({ error: 'Must provide questionIds array' });
         }
 
-        const reorderedQuestions = await quizService.reorderQuestions(quizId, req.body.questionIds);
+        if (!quiz) {
+            return res.status(404).json({ error: 'Quiz not found' });
+        }
+
+        const questionIds = req.body.questionIds.map(id => parseInt(id));
+        const uniqueIds = new Set(questionIds);
+        const quizQuestionIds = new Set((quiz.questions || []).map(question => question.id));
+        if (questionIds.length !== uniqueIds.size || questionIds.length !== quizQuestionIds.size) {
+            return res.status(400).json({ error: 'questionIds must include each question exactly once' });
+        }
+
+        for (const id of uniqueIds) {
+            if (!quizQuestionIds.has(id)) {
+                return res.status(400).json({ error: 'questionIds must match existing quiz questions' });
+            }
+        }
+
+        const reorderedQuestions = await quizService.reorderQuestions(quizId, questionIds);
         res.json(reorderedQuestions);
     } catch (error) {
         if (error.message === 'Quiz not found' || error.message.startsWith('Question not found')) {
@@ -288,6 +331,10 @@ app.put('/api/admin/quizzes/:id/questions/reorder', async (req, res) => {
         console.error('Error reordering questions:', error);
         res.status(500).json({ error: 'Failed to reorder questions' });
     }
+});
+
+app.get('/api/admin/categories', (req, res) => {
+    res.json(CATEGORIES);
 });
 
 //Starting server on port 3000

@@ -2,6 +2,10 @@
 
 ## Current State
 
+- **Last Agent**: OpenAI Codex (GPT-5.2-Codex)
+- **Last Session**: 2026-02-03
+- **Branch**: update-agent-docs
+- **Commit**: See `git log -1 --oneline` for current head
 - **Last Agent**: GPT-5.2-Codex
 - **Last Session**: 2026-02-03
 - **Branch**: claude/kahoot-quiz-setup-08CqB
@@ -37,6 +41,20 @@ None
 
 ## Session Notes
 
+### Session 7 (2026-02-03) - Archive Legacy Postgres Tooling
+
+**Completed**: Archived legacy Postgres migration/seed tooling to avoid Render build/start database connections.
+
+**Changes**:
+- Repurposed npm scripts (`migrate`, `seed`, `reset-db`) to no-op logging messages.
+- Documented Render build/start commands as `npm install` + `npm start`.
+- Marked legacy migration/seed scripts as archived and blocked in production.
+- Noted removal of migration/seed steps in CHANGELOG.
+- Reviewed .agent-instructions guidance for Claude/Codex/Gemini to ensure handoff docs align.
+
+**Next Agent Should**: Keep the build pipeline JSON/asset oriented; do not reintroduce Postgres migration/seed steps unless explicitly needed.
+
+---
 ### Session 7 (2026-02-03) - Seed Data Format Documentation
 
 **Completed**: Documented the seed JSON layout and optional validation helper.

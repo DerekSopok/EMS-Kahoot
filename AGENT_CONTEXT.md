@@ -41,6 +41,13 @@ None
 
 ## Session Notes
 
+### Session 9 (2026-02-03) - Verification Checklist and Rollback Notes
+
+**Completed**: Added a verification checklist for runtime and admin API JSON persistence checks plus a rollback plan tag note.
+
+**Docs Added**:
+- `docs/verification-checklist.md`: runtime smoke test steps, admin API checks, and rollback plan guidance.
+
 ### Session 7 (2026-02-03) - Archive Legacy Postgres Tooling
 
 **Completed**: Archived legacy Postgres migration/seed tooling to avoid Render build/start database connections.

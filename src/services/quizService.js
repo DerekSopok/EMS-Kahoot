@@ -5,6 +5,8 @@ const githubService = require('./githubService');
 class QuizService {
     constructor() {
         this.filePath = path.join(__dirname, '../../db/seeds/quizzes.json');
+        this.writeLock = false;
+        this.writeQueue = [];
     }
 
     /**
@@ -22,13 +24,38 @@ class QuizService {
      * formatQuestionsForGame for the normalization used by socket events.
      */
 
+    async acquireLock() {
+        return new Promise((resolve) => {
+            if (!this.writeLock) {
+                this.writeLock = true;
+                resolve();
+            } else {
+                this.writeQueue.push(resolve);
+            }
+        });
+    }
+
+    releaseLock() {
+        if (this.writeQueue.length > 0) {
+            const next = this.writeQueue.shift();
+            next();
+        } else {
+            this.writeLock = false;
+        }
+    }
+
     async saveQuizzes(quizzesData, action = 'update', quizTitle = '') {
-        // Save to local file
-        await fs.writeFile(
-            this.filePath,
-            JSON.stringify(quizzesData, null, 2),
-            'utf-8'
-        );
+        await this.acquireLock();
+        try {
+            // Save to local file
+            await fs.writeFile(
+                this.filePath,
+                JSON.stringify(quizzesData, null, 2),
+                'utf-8'
+            );
+        } finally {
+            this.releaseLock();
+        }
 
         // Auto-commit to GitHub (async, non-blocking)
         const commitMessage = githubService.generateCommitMessage(action, quizTitle);

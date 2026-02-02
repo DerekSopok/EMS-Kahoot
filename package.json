@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "migrate": "node -e \"console.log('Migrations are archived; no database action performed.')\"",
     "seed": "node -e \"console.log('Seeds are archived; no database action performed.')\"",
     "reset-db": "node -e \"console.log('Reset DB has been removed; no database action performed.')\""

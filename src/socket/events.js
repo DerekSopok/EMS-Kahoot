@@ -7,6 +7,12 @@
 
 const GameManager = require('./gameManager');
 const quizService = require('../services/quizService');
+const {
+    validateDisplayName,
+    validateRoomCode,
+    validateAnswerId,
+    validateResponseTime
+} = require('../utils/validation');
 
 /**
  * Initialize Socket.IO event handlers
@@ -406,17 +412,28 @@ function initializeSocketEvents(io) {
          */
         socket.on('player:join-room', (data) => {
             try {
-                const { roomCode, displayName } = data;
+                const roomCode = data?.roomCode;
+                const displayName = data?.displayName;
 
-                if (!roomCode || !displayName) {
+                if (!validateDisplayName(displayName)) {
                     socket.emit('player:join-room', {
                         success: false,
-                        error: 'Room code and display name are required'
+                        error: 'Invalid display name'
                     });
                     return;
                 }
 
-                const room = gameManager.getRoom(roomCode.toUpperCase());
+                if (!validateRoomCode(roomCode)) {
+                    socket.emit('player:join-room', {
+                        success: false,
+                        error: 'Invalid room code'
+                    });
+                    return;
+                }
+
+                const normalizedRoomCode = roomCode.trim().toUpperCase();
+                const normalizedDisplayName = displayName.trim();
+                const room = gameManager.getRoom(normalizedRoomCode);
 
                 if (!room) {
                     socket.emit('player:join-room', {
@@ -427,7 +444,7 @@ function initializeSocketEvents(io) {
                 }
 
                 // Try to add player
-                const player = gameManager.addPlayer(roomCode.toUpperCase(), socket.id, displayName);
+                const player = gameManager.addPlayer(normalizedRoomCode, socket.id, normalizedDisplayName);
 
                 if (!player) {
                     socket.emit('player:join-room', {
@@ -438,19 +455,19 @@ function initializeSocketEvents(io) {
                 }
 
                 // Join the room
-                socket.join(roomCode.toUpperCase());
+                socket.join(normalizedRoomCode);
 
                 socket.emit('player:join-room', {
                     success: true,
-                    roomCode: roomCode.toUpperCase(),
-                    playerName: displayName,
+                    roomCode: normalizedRoomCode,
+                    playerName: normalizedDisplayName,
                     playerId: player.id
                 });
 
                 // Broadcast to all in room
-                const players = gameManager.getPlayers(roomCode.toUpperCase());
-                io.to(roomCode.toUpperCase()).emit('room:player-joined', {
-                    playerName: displayName,
+                const players = gameManager.getPlayers(normalizedRoomCode);
+                io.to(normalizedRoomCode).emit('room:player-joined', {
+                    playerName: normalizedDisplayName,
                     playerCount: players.length,
                     players: players.map(p => ({
                         name: p.name,
@@ -458,7 +475,7 @@ function initializeSocketEvents(io) {
                     }))
                 });
 
-                console.log(`Player ${displayName} joined room ${roomCode.toUpperCase()}`);
+                console.log(`Player ${normalizedDisplayName} joined room ${normalizedRoomCode}`);
 
             } catch (error) {
                 console.error('Error joining room:', error);
@@ -544,7 +561,8 @@ function initializeSocketEvents(io) {
          */
         socket.on('player:submit-answer', (data) => {
             try {
-                const { answerId, responseTime } = data;
+                const { answerId } = data || {};
+                let { responseTime } = data || {};
 
                 const room = gameManager.getRoomByPlayer(socket.id);
 
@@ -556,6 +574,23 @@ function initializeSocketEvents(io) {
                 if (room.status !== 'playing') {
                     socket.emit('error', { message: 'Game is not active' });
                     return;
+                }
+
+                const currentQuestion = gameManager.getCurrentQuestion(room.code);
+                if (!currentQuestion) {
+                    socket.emit('error', { message: 'Question not available' });
+                    return;
+                }
+
+                if (!validateAnswerId(answerId, currentQuestion)) {
+                    socket.emit('error', { message: 'Invalid answer' });
+                    return;
+                }
+
+                if (!validateResponseTime(responseTime, currentQuestion.time_limit)) {
+                    const maxTime = currentQuestion.time_limit * 1000;
+                    const fallbackTime = Number.isFinite(responseTime) ? responseTime : maxTime;
+                    responseTime = Math.max(0, Math.min(fallbackTime, maxTime));
                 }
 
                 // Submit answer

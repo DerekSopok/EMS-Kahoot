@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ROADMAP.md for development phase tracking
 - CHANGELOG.md for version history
 - .agent-instructions/ directory with agent-specific coding guidelines
+- Added unit tests covering validation utilities and player removal answer tracking.
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.
@@ -27,7 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Legacy Socket.IO handlers, MongoDB wiring, and unused legacy UI flows.
 
 ### Fixed
-- Nothing yet
+- Added socket input validation for display names, room codes, answers, and response times.
+- Prevented player removal from leaving stale answer tracking state.
+- Serialized quiz JSON writes to avoid lost updates during concurrent edits.
 
 ### Security
 - Added admin token authentication for admin APIs and hardened quiz rendering against XSS.

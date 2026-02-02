@@ -2,10 +2,10 @@
 
 ## Current State
 
-- **Last Agent**: Claude Code (Sonnet 4.5)
-- **Last Session**: 2026-02-02
+- **Last Agent**: GPT-5.2-Codex
+- **Last Session**: 2026-02-03
 - **Branch**: claude/kahoot-quiz-setup-08CqB
-- **Commit**: 6b562e7 — "feat: quiz management with GitHub auto-commit"
+- **Commit**: f25432d — "Add seed data format documentation"
 
 ## Active Task
 
@@ -36,6 +36,21 @@ None
 6. Add bulk import/export functionality
 
 ## Session Notes
+
+### Session 7 (2026-02-03) - Seed Data Format Documentation
+
+**Completed**: Documented the seed JSON layout and optional validation helper.
+
+**Docs Added**:
+- `db/seeds/README.md`: explains required `quizzes.json` plus optional companion files.
+- `docs/seed-data-format.md`: outlines required/optional fields for quizzes, questions, and answer options.
+
+**Optional Tooling**:
+- `scripts/validate-seeds.js`: dependency-free seed JSON validator (optional usage).
+
+**Notes**:
+- No runtime dependencies added.
+- Seed validation is not wired into CI by default.
 
 ### Session 6 (2026-02-02) - Quiz Management System with GitHub Auto-Commit
 

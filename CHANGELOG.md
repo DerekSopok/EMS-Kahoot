@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added admin quiz CRUD API, category listing, and validation utilities for quiz management.
 - Added admin API documentation for quiz management endpoints.
 - Added admin dashboard and quiz editor UI for managing quizzes and questions.
+- Added admin image upload API and quiz editor support for question images.
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.

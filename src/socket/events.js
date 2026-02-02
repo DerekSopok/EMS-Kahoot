@@ -165,6 +165,7 @@ function initializeSocketEvents(io) {
                             questionNumber: room.currentQuestionIndex + 1,
                             totalQuestions: room.questions.length,
                             questionText: question.question_text,
+                            imageUrl: question.image_url || null,
                             timeLimit: question.time_limit,
                             answers: question.answer_options.map(opt => ({
                                 id: opt.id,
@@ -217,6 +218,7 @@ function initializeSocketEvents(io) {
                     questionNumber: room.currentQuestionIndex + 1,
                     totalQuestions: room.questions.length,
                     questionText: question.question_text,
+                    imageUrl: question.image_url || null,
                     timeLimit: question.time_limit,
                     answers: question.answer_options.map(opt => ({
                         id: opt.id,
@@ -282,6 +284,7 @@ function initializeSocketEvents(io) {
                     questionNumber: room.currentQuestionIndex + 1,
                     totalQuestions: room.questions.length,
                     questionText: question.question_text,
+                    imageUrl: question.image_url || null,
                     timeLimit: question.time_limit,
                     answers: question.answer_options.map(opt => ({
                         id: opt.id,
@@ -536,6 +539,7 @@ function initializeSocketEvents(io) {
                             questionNumber: room.currentQuestionIndex + 1,
                             totalQuestions: room.questions.length,
                             questionText: question.question_text,
+                            imageUrl: question.image_url || null,
                             timeLimit: question.time_limit,
                             answers: question.answer_options.map(opt => ({
                                 id: opt.id,

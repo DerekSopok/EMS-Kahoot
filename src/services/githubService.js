@@ -1,4 +1,6 @@
 const fetch = require('node-fetch');
+const fs = require('fs').promises;
+const path = require('path');
 
 class GitHubService {
     constructor() {
@@ -69,6 +71,99 @@ class GitHubService {
 
     async commitQuizzes(quizzesData, commitMessage) {
         return this.commitQuizzesFile(quizzesData, commitMessage);
+    }
+
+    async commitImage(localPath, repoPath) {
+        if (!this.token) {
+            console.warn('GITHUB_TOKEN not set - skipping image commit');
+            return { skipped: true };
+        }
+
+        try {
+            const content = await fs.readFile(localPath);
+            const contentBase64 = Buffer.from(content).toString('base64');
+            const sanitizedRepoPath = repoPath.replace(/^\//, '');
+            const fileUrl = this.apiBase + '/repos/' + this.owner + '/' + this.repo + '/contents/' + sanitizedRepoPath;
+
+            const commitData = {
+                message: 'image: add ' + path.basename(repoPath),
+                content: contentBase64,
+                branch: this.branch
+            };
+
+            const putResponse = await fetch(fileUrl, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': 'Bearer ' + this.token,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(commitData)
+            });
+
+            if (!putResponse.ok) {
+                const errorText = await putResponse.text();
+                throw new Error('GitHub API error: ' + putResponse.statusText + ' - ' + errorText);
+            }
+
+            const result = await putResponse.json();
+            console.log('✓ Committed image to GitHub: ' + repoPath);
+            return result;
+        } catch (error) {
+            console.error('✗ GitHub image commit failed:', error.message);
+            return { error: true, message: error.message };
+        }
+    }
+
+    async deleteImage(repoPath) {
+        if (!this.token) {
+            console.warn('GITHUB_TOKEN not set - skipping image delete');
+            return { skipped: true };
+        }
+
+        try {
+            const sanitizedRepoPath = repoPath.replace(/^\//, '');
+            const fileUrl = this.apiBase + '/repos/' + this.owner + '/' + this.repo + '/contents/' + sanitizedRepoPath;
+            const getResponse = await fetch(fileUrl + '?ref=' + this.branch, {
+                headers: {
+                    'Authorization': 'Bearer ' + this.token,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!getResponse.ok) {
+                const errorText = await getResponse.text();
+                throw new Error('GitHub API error: ' + getResponse.statusText + ' - ' + errorText);
+            }
+
+            const fileData = await getResponse.json();
+
+            const deleteResponse = await fetch(fileUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + this.token,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'image: delete ' + path.basename(repoPath),
+                    sha: fileData.sha,
+                    branch: this.branch
+                })
+            });
+
+            if (!deleteResponse.ok) {
+                const errorText = await deleteResponse.text();
+                throw new Error('GitHub API error: ' + deleteResponse.statusText + ' - ' + errorText);
+            }
+
+            const result = await deleteResponse.json();
+            console.log('✓ Deleted image from GitHub: ' + repoPath);
+            return result;
+        } catch (error) {
+            console.error('✗ GitHub image delete failed:', error.message);
+            return { error: true, message: error.message };
+        }
     }
 
     generateCommitMessage(action, quizTitle = '') {

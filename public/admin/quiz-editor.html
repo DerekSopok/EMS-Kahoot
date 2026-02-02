@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Editor - EMS Kahoot</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div>
+                <p class="eyebrow">Quiz Editor</p>
+                <h1 id="quizEditorTitle">Create a New Quiz</h1>
+            </div>
+            <div class="header-actions">
+                <a href="/admin/index.html" class="btn btn-secondary">Back to Dashboard</a>
+                <button class="btn btn-primary" id="saveQuizBtn" type="button">Save Quiz</button>
+            </div>
+        </header>
+
+        <section id="loginPrompt" class="login-prompt hidden">
+            <h2>Admin Login</h2>
+            <p>Enter your admin token to manage quizzes.</p>
+            <form id="loginForm" class="login-form">
+                <label for="adminTokenInput">Admin Token</label>
+                <input type="password" id="adminTokenInput" autocomplete="current-password" required>
+                <button type="submit" class="btn btn-primary">Unlock Editor</button>
+            </form>
+            <p id="loginMessage" class="login-message"></p>
+        </section>
+
+        <section id="editorContent" class="editor-content hidden">
+            <div id="statusMessage" class="status" role="status" aria-live="polite"></div>
+
+            <section class="card">
+                <h2>Quiz Details</h2>
+                <form id="quizForm" class="quiz-form">
+                    <div class="form-group">
+                        <label for="quizTitle">Title *</label>
+                        <input type="text" id="quizTitle" maxlength="200" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quizDescription">Description</label>
+                        <textarea id="quizDescription" rows="4" maxlength="1000"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="quizCategory">Category *</label>
+                        <select id="quizCategory" required></select>
+                    </div>
+                </form>
+            </section>
+
+            <section class="card questions-section">
+                <div class="section-header">
+                    <h2>Questions</h2>
+                    <button class="btn btn-success" id="addQuestionBtn" type="button">+ Add Question</button>
+                </div>
+                <div id="questionList" class="question-list"></div>
+            </section>
+
+            <section id="questionEditor" class="card question-editor hidden">
+                <h2 id="questionEditorTitle">Add Question</h2>
+                <form id="questionForm">
+                    <div class="form-group">
+                        <label for="questionText">Question Text *</label>
+                        <textarea id="questionText" rows="3" required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="questionTime">Time Limit</label>
+                            <select id="questionTime"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="questionPoints">Points</label>
+                            <select id="questionPoints"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Answer Options</label>
+                        <div id="answerOptions" class="answer-options"></div>
+                        <button class="btn btn-secondary btn-sm" id="addOptionBtn" type="button">+ Add Option</button>
+                    </div>
+                    <div id="questionErrors" class="form-errors"></div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" id="cancelQuestionBtn" type="button">Cancel</button>
+                        <button class="btn btn-primary" id="saveQuestionBtn" type="submit">Save Question</button>
+                    </div>
+                </form>
+            </section>
+        </section>
+    </div>
+
+    <script src="/admin/quiz-editor.js"></script>
+</body>
+</html>

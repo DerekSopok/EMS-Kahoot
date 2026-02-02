@@ -1,15 +1,18 @@
 # kahoot-clone-nodejs
 <h3>INSTRUCTIONS:</h3>
 <ol>
-  <li>Install MongoDB: 'Sudo apt-get install mongodb'</li>
-  <li>Start MongoDB: 'Sudo service mongodb start'</li>
-  <li>Make sure all node modules have been installed listed in package.json: express, moment, mongodb, mongoose, socket.io</li>
-  <li>Start Server: nodejs server/server.js</li>
+  <li>Install dependencies: <code>npm install</code></li>
+  <li>Start the server: <code>npm start</code></li>
 </ol>
 <br>
 <h3>Description</h3>
-<h5>This project is a kahoot clone that uses nodejs and mongodb</h5>
+<h5>This project is a kahoot clone that uses Node.js, Socket.IO, and JSON quiz storage</h5>
 <h5>Multiple games can be ongoing at one time and works with many players per game</h5>
+<h3>Data Storage</h3>
+<ul>
+  <li>Quiz data is stored in <code>db/seeds/quizzes.json</code> and accessed via <code>quizService</code>.</li>
+  <li>Game sessions and players are in-memory via <code>GameManager</code>.</li>
+</ul>
 <h3>Admin Access</h3>
 <ul>
   <li>Set <code>ADMIN_TOKEN</code> in your environment (see <code>.env.example</code>) to protect <code>/api/admin/*</code> routes.</li>

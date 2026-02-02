@@ -14,6 +14,9 @@ class GameManager {
         this.rooms = new Map(); // roomCode -> Room
         this.hostSocketToRoom = new Map(); // hostSocketId -> roomCode
         this.playerSocketToRoom = new Map(); // playerSocketId -> roomCode
+        this.playerIdToRoom = new Map(); // playerId -> roomCode
+        this.playerIdToSocketId = new Map(); // playerId -> socketId
+        this.socketIdToPlayerId = new Map(); // socketId -> playerId
     }
 
     /**
@@ -31,6 +34,14 @@ class GameManager {
             return this.generateRoomCode();
         }
         return code;
+    }
+
+    /**
+     * Generate a unique player ID
+     * @returns {string} Unique player ID
+     */
+    generatePlayerId() {
+        return `player_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`;
     }
 
     /**
@@ -53,7 +64,8 @@ class GameManager {
             currentQuestionIndex: 0,
             questionStartTime: null,
             playersAnswered: new Set(),
-            createdAt: new Date()
+            createdAt: new Date(),
+            hostDisconnectedAt: null
         };
 
         this.rooms.set(roomCode, room);
@@ -79,6 +91,26 @@ class GameManager {
     getRoomByHost(hostSocketId) {
         const roomCode = this.hostSocketToRoom.get(hostSocketId);
         return roomCode ? this.rooms.get(roomCode) : null;
+    }
+
+    /**
+     * Reassign host socket ID for a room
+     * @param {string} roomCode - Room code
+     * @param {string} newHostSocketId - New host socket ID
+     * @returns {Object|null} Updated room or null if not found
+     */
+    reassignHost(roomCode, newHostSocketId) {
+        const room = this.rooms.get(roomCode);
+        if (!room) {
+            return null;
+        }
+
+        this.hostSocketToRoom.delete(room.hostSocketId);
+        room.hostSocketId = newHostSocketId;
+        room.hostDisconnectedAt = null;
+        this.hostSocketToRoom.set(newHostSocketId, roomCode);
+
+        return room;
     }
 
     /**
@@ -115,8 +147,9 @@ class GameManager {
             return null;
         }
 
+        const playerId = this.generatePlayerId();
         const player = {
-            id: socketId,
+            id: playerId,
             socketId,
             name: displayName,
             score: 0,
@@ -126,6 +159,9 @@ class GameManager {
 
         room.players.set(socketId, player);
         this.playerSocketToRoom.set(socketId, roomCode);
+        this.playerIdToRoom.set(playerId, roomCode);
+        this.playerIdToSocketId.set(playerId, socketId);
+        this.socketIdToPlayerId.set(socketId, playerId);
 
         return player;
     }
@@ -146,8 +182,44 @@ class GameManager {
             return false;
         }
 
+        const playerId = this.socketIdToPlayerId.get(socketId);
         room.players.delete(socketId);
         this.playerSocketToRoom.delete(socketId);
+        if (playerId) {
+            this.playerIdToRoom.delete(playerId);
+            this.playerIdToSocketId.delete(playerId);
+            this.socketIdToPlayerId.delete(socketId);
+        }
+
+        return true;
+    }
+
+    /**
+     * Remove a player by player ID
+     * @param {string} playerId - Player ID
+     * @returns {boolean} True if player was removed, false otherwise
+     */
+    removePlayerById(playerId) {
+        const roomCode = this.playerIdToRoom.get(playerId);
+        if (!roomCode) {
+            return false;
+        }
+
+        const room = this.rooms.get(roomCode);
+        if (!room) {
+            return false;
+        }
+
+        const socketId = this.playerIdToSocketId.get(playerId);
+        if (!socketId) {
+            return false;
+        }
+
+        room.players.delete(socketId);
+        this.playerSocketToRoom.delete(socketId);
+        this.playerIdToRoom.delete(playerId);
+        this.playerIdToSocketId.delete(playerId);
+        this.socketIdToPlayerId.delete(socketId);
 
         return true;
     }
@@ -179,6 +251,62 @@ class GameManager {
 
         const room = this.rooms.get(roomCode);
         return room ? room.players.get(socketId) : null;
+    }
+
+    /**
+     * Get player by player ID
+     * @param {string} playerId - Player ID
+     * @returns {Object|null} Player object or null if not found
+     */
+    getPlayerById(playerId) {
+        const roomCode = this.playerIdToRoom.get(playerId);
+        if (!roomCode) {
+            return null;
+        }
+
+        const room = this.rooms.get(roomCode);
+        if (!room) {
+            return null;
+        }
+
+        const socketId = this.playerIdToSocketId.get(playerId);
+        return socketId ? room.players.get(socketId) : null;
+    }
+
+    /**
+     * Reassign player socket ID for reconnects
+     * @param {string} roomCode - Room code
+     * @param {string} playerId - Player ID
+     * @param {string} newSocketId - New socket ID
+     * @returns {Object|null} Updated player or null if not found
+     */
+    reassignPlayerSocket(roomCode, playerId, newSocketId) {
+        const room = this.rooms.get(roomCode);
+        if (!room) {
+            return null;
+        }
+
+        const oldSocketId = this.playerIdToSocketId.get(playerId);
+        if (!oldSocketId) {
+            return null;
+        }
+
+        const player = room.players.get(oldSocketId);
+        if (!player) {
+            return null;
+        }
+
+        room.players.delete(oldSocketId);
+        player.socketId = newSocketId;
+        room.players.set(newSocketId, player);
+
+        this.playerSocketToRoom.delete(oldSocketId);
+        this.playerSocketToRoom.set(newSocketId, roomCode);
+        this.playerIdToSocketId.set(playerId, newSocketId);
+        this.socketIdToPlayerId.delete(oldSocketId);
+        this.socketIdToPlayerId.set(newSocketId, playerId);
+
+        return player;
     }
 
     /**
@@ -365,8 +493,14 @@ class GameManager {
         this.hostSocketToRoom.delete(room.hostSocketId);
 
         // Clean up all player references
-        for (const playerId of room.players.keys()) {
-            this.playerSocketToRoom.delete(playerId);
+        for (const socketId of room.players.keys()) {
+            this.playerSocketToRoom.delete(socketId);
+            const mappedPlayerId = this.socketIdToPlayerId.get(socketId);
+            if (mappedPlayerId) {
+                this.playerIdToRoom.delete(mappedPlayerId);
+                this.playerIdToSocketId.delete(mappedPlayerId);
+                this.socketIdToPlayerId.delete(socketId);
+            }
         }
 
         // Delete the room

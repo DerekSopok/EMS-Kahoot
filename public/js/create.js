@@ -20,5 +20,5 @@ socket.on('gameNamesData', function(data){
 });
 
 function startGame(data){
-    window.location.href="/host/" + "?id=" + data;
+    window.location.href="/host/" + "?quizId=" + data;
 }

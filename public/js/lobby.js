@@ -1,26 +1,42 @@
-var socket = io();
+const socket = io();
 
-//When player connects to server
-socket.on('connect', function() {
-    
-    var params = jQuery.deparam(window.location.search); //Gets data from url
-    
-    //Tell server that it is player connection
-    socket.emit('player-join', params);
+socket.on('connect', () => {
+    const params = new URLSearchParams(window.location.search);
+    const displayName = params.get('name');
+    const roomCode = params.get('pin');
+
+    if (!displayName || !roomCode) {
+        window.location.href = '../';
+        return;
+    }
+
+    socket.emit('player:join-room', {
+        displayName,
+        roomCode
+    });
 });
 
-//Boot player back to join screen if game pin has no match
-socket.on('noGameFound', function(){
+socket.on('player:join-room', (data) => {
+    if (!data?.success) {
+        window.location.href = '../';
+        return;
+    }
+
+    sessionStorage.setItem('playerId', data.playerId);
+    sessionStorage.setItem('playerRoomCode', data.roomCode);
+    sessionStorage.setItem('playerName', data.playerName);
+});
+
+socket.on('game:question', () => {
+    const roomCode = sessionStorage.getItem('playerRoomCode');
+    if (!roomCode) {
+        window.location.href = '../';
+        return;
+    }
+    window.location.href = `/player/game/?roomCode=${encodeURIComponent(roomCode)}`;
+});
+
+socket.on('room:host-disconnect', () => {
     window.location.href = '../';
 });
-//If the host disconnects, then the player is booted to main screen
-socket.on('hostDisconnect', function(){
-    window.location.href = '../';
-});
-
-//When the host clicks start game, the player screen changes
-socket.on('gameStartedPlayer', function(){
-    window.location.href="/player/game/" + "?id=" + socket.id;
-});
-
 

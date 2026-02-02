@@ -25,7 +25,7 @@
 - [ ] Create database connection module
 - [ ] Write initial schema migration (001_initial_schema.sql)
 - [ ] Create seed file for sample EMS questions
-- [ ] Update server.js to use PostgreSQL instead of MongoDB
+- [ ] Update server.js to use PostgreSQL instead of JSON storage
 
 ### 1.2 Core Game Engine Fixes
 - [ ] Test and fix room creation with unique game pins
@@ -35,6 +35,7 @@
 - [ ] Verify answer submission from player devices
 - [ ] Fix scoring and timer logic bugs
 - [ ] Add proper error handling for disconnections
+- [x] Remove legacy socket flow and MongoDB references
 
 ### 1.3 Code Quality
 - [ ] Remove jQuery dependency (use vanilla JS)

@@ -17,12 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.
+- Consolidated game session state to `GameManager` and updated Socket.IO flows.
 
 ### Deprecated
 - Nothing yet
 
 ### Removed
 - Build pipeline no longer runs migration/seed steps.
+- Legacy Socket.IO handlers, MongoDB wiring, and unused legacy UI flows.
 
 ### Fixed
 - Nothing yet

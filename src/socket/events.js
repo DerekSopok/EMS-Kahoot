@@ -14,6 +14,8 @@ const quizService = require('../services/quizService');
  */
 function initializeSocketEvents(io) {
     const gameManager = new GameManager();
+    const hostDisconnectTimers = new Map();
+    const playerDisconnectTimers = new Map();
 
     io.on('connection', (socket) => {
         console.log(`Client connected: ${socket.id}`);
@@ -47,92 +49,6 @@ function initializeSocketEvents(io) {
         // ===========================
         // HOST EVENTS
         // ===========================
-
-        /**
-         * Legacy host-join event (for backward compatibility with old frontend)
-         * Used by /host/ page when clicking on a quiz from /create/
-         * Expects: { id: string } from URL params
-         * Emits: showGamePin with { pin: string }
-         */
-        socket.on('host-join', async (data) => {
-            try {
-                const quizId = parseInt(data.id);
-
-                if (!quizId || isNaN(quizId)) {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                // Fetch quiz from JSON file storage
-                const quiz = await quizService.getQuizById(quizId);
-
-                if (!quiz) {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                const formattedQuestions = quizService.formatQuestionsForGame(quiz);
-
-                if (formattedQuestions.length === 0) {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                // Create room
-                const room = gameManager.createRoom(socket.id, quizId, formattedQuestions);
-
-                // Join the room
-                socket.join(room.code);
-
-                console.log(`Game Created with pin: ${room.code} by host ${socket.id}`);
-
-                // Emit in legacy format
-                socket.emit('showGamePin', {
-                    pin: room.code
-                });
-
-            } catch (error) {
-                console.error('Error creating game:', error);
-                socket.emit('noGameFound');
-            }
-        });
-
-        /**
-         * Legacy startGame event (for backward compatibility with old frontend)
-         * Used by /host/ page when host clicks "Start Game"
-         * Emits: gameStarted to host with hostId for redirect
-         * Emits: gameStartedPlayer to all players to redirect them to game
-         */
-        socket.on('startGame', () => {
-            try {
-                const room = gameManager.getRoomByHost(socket.id);
-
-                if (!room) {
-                    socket.emit('error', { message: 'Room not found' });
-                    return;
-                }
-
-                if (room.players.size === 0) {
-                    socket.emit('error', { message: 'No players in room' });
-                    return;
-                }
-
-                // Start the game
-                gameManager.startGame(room.code);
-
-                console.log(`Game started in room ${room.code}`);
-
-                // Tell host to go to game view (legacy format)
-                socket.emit('gameStarted', socket.id);
-
-                // Tell all players to go to game view (legacy format)
-                io.to(room.code).emit('gameStartedPlayer');
-
-            } catch (error) {
-                console.error('Error starting game:', error);
-                socket.emit('error', { message: 'Failed to start game' });
-            }
-        });
 
         /**
          * Host creates a new room (new API)
@@ -185,6 +101,79 @@ function initializeSocketEvents(io) {
                     success: false,
                     error: 'Failed to create room'
                 });
+            }
+        });
+
+        /**
+         * Host re-joins an existing room (e.g., page navigation)
+         * Expects: { roomCode: string }
+         * Emits: { success: boolean, roomCode: string, status: string, players: Array, question?: Object }
+         */
+        socket.on('host:join-room', (data) => {
+            try {
+                const roomCode = data?.roomCode?.toUpperCase();
+                if (!roomCode) {
+                    socket.emit('host:join-room', { success: false, error: 'Room code required' });
+                    return;
+                }
+
+                const room = gameManager.getRoom(roomCode);
+                if (!room) {
+                    socket.emit('host:join-room', { success: false, error: 'Room not found' });
+                    return;
+                }
+
+                const reconnectTimer = hostDisconnectTimers.get(roomCode);
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    hostDisconnectTimers.delete(roomCode);
+                }
+
+                if (room.hostSocketId !== socket.id) {
+                    gameManager.reassignHost(roomCode, socket.id);
+                }
+
+                socket.join(roomCode);
+
+                const players = gameManager.getPlayers(roomCode).map(p => ({
+                    name: p.name,
+                    id: p.socketId,
+                    score: p.score,
+                    playerId: p.id
+                }));
+
+                const response = {
+                    success: true,
+                    roomCode,
+                    status: room.status,
+                    players,
+                    playerCount: players.length
+                };
+
+                if (room.status === 'playing') {
+                    const question = gameManager.getCurrentQuestion(roomCode);
+                    if (question) {
+                        const correctOption = question.answer_options.find(opt => opt.is_correct);
+                        response.question = {
+                            questionIndex: room.currentQuestionIndex,
+                            questionNumber: room.currentQuestionIndex + 1,
+                            totalQuestions: room.questions.length,
+                            questionText: question.question_text,
+                            timeLimit: question.time_limit,
+                            answers: question.answer_options.map(opt => ({
+                                id: opt.id,
+                                text: opt.option_text,
+                                order: opt.order_index
+                            })),
+                            correctAnswerId: correctOption?.id
+                        };
+                    }
+                }
+
+                socket.emit('host:join-room', response);
+            } catch (error) {
+                console.error('Error rejoining room:', error);
+                socket.emit('host:join-room', { success: false, error: 'Failed to join room' });
             }
         });
 
@@ -410,64 +399,6 @@ function initializeSocketEvents(io) {
         // ===========================
 
         /**
-         * Legacy player-join event (for backward compatibility with old frontend)
-         * Used by /player/ lobby when joining from home page form
-         * Expects: { pin: string, name: string } from URL params
-         * Emits: noGameFound if game not found, otherwise player stays in lobby
-         * Broadcasts: updatePlayerLobby to host with player list
-         */
-        socket.on('player-join', (data) => {
-            try {
-                const { pin, name } = data;
-                const roomCode = String(pin).toUpperCase();
-
-                if (!pin || !name) {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                const room = gameManager.getRoom(roomCode);
-
-                if (!room) {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                if (room.status === 'playing') {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                // Try to add player
-                const player = gameManager.addPlayer(roomCode, socket.id, name);
-
-                if (!player) {
-                    socket.emit('noGameFound');
-                    return;
-                }
-
-                // Join the room
-                socket.join(roomCode);
-
-                console.log(`Player ${name} joined room ${roomCode}`);
-
-                // Send updated player list to host (legacy format)
-                const players = gameManager.getPlayers(roomCode);
-                const playerList = players.map(p => ({
-                    name: p.name,
-                    id: p.socketId
-                }));
-
-                // Emit to all in room (host will update their player list)
-                io.to(roomCode).emit('updatePlayerLobby', playerList);
-
-            } catch (error) {
-                console.error('Error player joining:', error);
-                socket.emit('noGameFound');
-            }
-        });
-
-        /**
          * Player joins a room (new API)
          * Expects: { roomCode: string, displayName: string }
          * Emits: { success: boolean, error?: string }
@@ -512,7 +443,8 @@ function initializeSocketEvents(io) {
                 socket.emit('player:join-room', {
                     success: true,
                     roomCode: roomCode.toUpperCase(),
-                    playerName: displayName
+                    playerName: displayName,
+                    playerId: player.id
                 });
 
                 // Broadcast to all in room
@@ -534,6 +466,73 @@ function initializeSocketEvents(io) {
                     success: false,
                     error: 'Failed to join room'
                 });
+            }
+        });
+
+        /**
+         * Player re-joins an existing room (e.g., page navigation)
+         * Expects: { roomCode: string, playerId: string }
+         * Emits: { success: boolean, playerName?: string, playerScore?: number, status?: string, question?: Object }
+         */
+        socket.on('player:rejoin-room', (data) => {
+            try {
+                const roomCode = data?.roomCode?.toUpperCase();
+                const playerId = data?.playerId;
+
+                if (!roomCode || !playerId) {
+                    socket.emit('player:rejoin-room', { success: false, error: 'Room code and player ID required' });
+                    return;
+                }
+
+                const room = gameManager.getRoom(roomCode);
+                if (!room) {
+                    socket.emit('player:rejoin-room', { success: false, error: 'Room not found' });
+                    return;
+                }
+
+                const reconnectTimer = playerDisconnectTimers.get(playerId);
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    playerDisconnectTimers.delete(playerId);
+                }
+
+                const player = gameManager.reassignPlayerSocket(roomCode, playerId, socket.id);
+                if (!player) {
+                    socket.emit('player:rejoin-room', { success: false, error: 'Player not found' });
+                    return;
+                }
+
+                socket.join(roomCode);
+
+                const response = {
+                    success: true,
+                    playerName: player.name,
+                    playerScore: player.score,
+                    status: room.status
+                };
+
+                if (room.status === 'playing') {
+                    const question = gameManager.getCurrentQuestion(roomCode);
+                    if (question) {
+                        response.question = {
+                            questionIndex: room.currentQuestionIndex,
+                            questionNumber: room.currentQuestionIndex + 1,
+                            totalQuestions: room.questions.length,
+                            questionText: question.question_text,
+                            timeLimit: question.time_limit,
+                            answers: question.answer_options.map(opt => ({
+                                id: opt.id,
+                                text: opt.option_text,
+                                order: opt.order_index
+                            }))
+                        };
+                    }
+                }
+
+                socket.emit('player:rejoin-room', response);
+            } catch (error) {
+                console.error('Error rejoining room:', error);
+                socket.emit('player:rejoin-room', { success: false, error: 'Failed to rejoin room' });
             }
         });
 
@@ -608,7 +607,7 @@ function initializeSocketEvents(io) {
          * Player leaves the room
          */
         socket.on('player:leave', () => {
-            handlePlayerDisconnect(socket);
+            removePlayerImmediately(socket);
         });
 
         // ===========================
@@ -631,25 +630,78 @@ function initializeSocketEvents(io) {
                 if (room) {
                     const player = gameManager.getPlayer(socket.id);
                     const playerName = player ? player.name : 'Unknown';
+                    const playerId = player ? player.id : null;
 
-                    gameManager.removePlayer(socket.id);
-                    socket.leave(room.code);
+                    if (!playerId) {
+                        gameManager.removePlayer(socket.id);
+                        socket.leave(room.code);
+                        return;
+                    }
 
-                    // Broadcast to room
-                    const players = gameManager.getPlayers(room.code);
-                    io.to(room.code).emit('room:player-left', {
-                        playerName,
-                        playerCount: players.length,
-                        players: players.map(p => ({
-                            name: p.name,
-                            id: p.socketId
-                        }))
-                    });
+                    if (playerDisconnectTimers.has(playerId)) {
+                        return;
+                    }
 
-                    console.log(`Player ${playerName} left room ${room.code}`);
+                    const disconnectTimer = setTimeout(() => {
+                        const removed = gameManager.removePlayerById(playerId);
+                        if (!removed) {
+                            return;
+                        }
+
+                        const players = gameManager.getPlayers(room.code);
+                        io.to(room.code).emit('room:player-left', {
+                            playerName,
+                            playerCount: players.length,
+                            players: players.map(p => ({
+                                name: p.name,
+                                id: p.socketId
+                            }))
+                        });
+
+                        console.log(`Player ${playerName} left room ${room.code}`);
+                        playerDisconnectTimers.delete(playerId);
+                    }, 10000);
+
+                    playerDisconnectTimers.set(playerId, disconnectTimer);
                 }
             } catch (error) {
                 console.error('Error handling player disconnect:', error);
+            }
+        }
+
+        function removePlayerImmediately(socket) {
+            try {
+                const room = gameManager.getRoomByPlayer(socket.id);
+
+                if (!room) {
+                    return;
+                }
+
+                const player = gameManager.getPlayer(socket.id);
+                const playerName = player ? player.name : 'Unknown';
+                const playerId = player ? player.id : null;
+
+                if (playerId && playerDisconnectTimers.has(playerId)) {
+                    clearTimeout(playerDisconnectTimers.get(playerId));
+                    playerDisconnectTimers.delete(playerId);
+                }
+
+                gameManager.removePlayer(socket.id);
+                socket.leave(room.code);
+
+                const players = gameManager.getPlayers(room.code);
+                io.to(room.code).emit('room:player-left', {
+                    playerName,
+                    playerCount: players.length,
+                    players: players.map(p => ({
+                        name: p.name,
+                        id: p.socketId
+                    }))
+                });
+
+                console.log(`Player ${playerName} left room ${room.code}`);
+            } catch (error) {
+                console.error('Error removing player:', error);
             }
         }
 
@@ -661,15 +713,30 @@ function initializeSocketEvents(io) {
                 const room = gameManager.getRoomByHost(socket.id);
 
                 if (room) {
-                    // Notify all players that host disconnected
-                    io.to(room.code).emit('room:host-disconnect', {
-                        message: 'Host has disconnected. Game ended.'
-                    });
+                    if (hostDisconnectTimers.has(room.code)) {
+                        return;
+                    }
 
-                    // Clean up room
-                    gameManager.deleteRoom(room.code);
+                    room.hostDisconnectedAt = Date.now();
 
-                    console.log(`Host disconnected, room ${room.code} deleted`);
+                    const disconnectTimer = setTimeout(() => {
+                        const currentRoom = gameManager.getRoom(room.code);
+                        if (!currentRoom || currentRoom.hostSocketId !== socket.id) {
+                            hostDisconnectTimers.delete(room.code);
+                            return;
+                        }
+
+                        io.to(room.code).emit('room:host-disconnect', {
+                            message: 'Host has disconnected. Game ended.'
+                        });
+
+                        gameManager.deleteRoom(room.code);
+                        hostDisconnectTimers.delete(room.code);
+
+                        console.log(`Host disconnected, room ${room.code} deleted`);
+                    }, 10000);
+
+                    hostDisconnectTimers.set(room.code, disconnectTimer);
                 }
             } catch (error) {
                 console.error('Error handling host disconnect:', error);

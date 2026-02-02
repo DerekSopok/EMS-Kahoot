@@ -70,6 +70,15 @@ None
 - No runtime dependencies added.
 - Seed validation is not wired into CI by default.
 
+---
+### Session 8 (2026-02-03) - Gameplay Shape Normalization Notes
+
+**Completed**: Documented gameplay normalization expectations for quizzes and answer options.
+
+**Changes**:
+- Documented optional answer option IDs and runtime normalization in `docs/seed-data-format.md`.
+- Centralized gameplay normalization helper in `quizService` and updated socket handlers to use it.
+
 ### Session 6 (2026-02-02) - Quiz Management System with GitHub Auto-Commit
 
 **Completed**: Built comprehensive quiz management system with automatic GitHub commits for data persistence on Render

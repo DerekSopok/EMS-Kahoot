@@ -7,6 +7,21 @@ class QuizService {
         this.filePath = path.join(__dirname, '../../db/seeds/quizzes.json');
     }
 
+    /**
+     * Quiz storage shape (db/seeds/quizzes.json):
+     * {
+     *   id, title, description, category, is_public, created_at?, updated_at?,
+     *   questions: [{
+     *     id, question_text, question_type, time_limit, points, order_index, image_url?,
+     *     answer_options: [{ id?, option_text, is_correct, order_index }]
+     *   }]
+     * }
+     *
+     * Socket/gameplay uses the same quiz/question/answer fields, but requires
+     * stable option IDs and order indices for gameplay selection. See
+     * formatQuestionsForGame for the normalization used by socket events.
+     */
+
     async saveQuizzes(quizzesData, action = 'update', quizTitle = '') {
         // Save to local file
         await fs.writeFile(
@@ -39,6 +54,28 @@ class QuizService {
     async getQuizById(id) {
         const quizzes = await this.loadQuizzes();
         return quizzes.find(q => q.id === id);
+    }
+
+    /**
+     * Normalize quiz questions to the format expected by GameManager/socket events.
+     * This keeps gameplay selection stable without altering stored quiz data.
+     */
+    formatQuestionsForGame(quiz) {
+        const questions = quiz?.questions || [];
+
+        return questions.map((q, index) => ({
+            id: q.id,
+            question_text: q.question_text,
+            time_limit: q.time_limit || 20,
+            points: q.points || 1000,
+            order_index: q.order_index || index + 1,
+            answer_options: (q.answer_options || []).map((opt, optIndex) => ({
+                id: opt.id || optIndex + 1,
+                option_text: opt.option_text,
+                is_correct: opt.is_correct,
+                order_index: opt.order_index || optIndex + 1
+            }))
+        }));
     }
 
     async createQuiz(quizData) {

@@ -71,28 +71,12 @@ function initializeSocketEvents(io) {
                     return;
                 }
 
-                // Transform questions to match expected format
-                const questions = quiz.questions || [];
+                const formattedQuestions = quizService.formatQuestionsForGame(quiz);
 
-                if (questions.length === 0) {
+                if (formattedQuestions.length === 0) {
                     socket.emit('noGameFound');
                     return;
                 }
-
-                // Transform questions to match the format expected by gameManager
-                const formattedQuestions = questions.map((q, index) => ({
-                    id: q.id,
-                    question_text: q.question_text,
-                    time_limit: q.time_limit || 20,
-                    points: q.points || 1000,
-                    order_index: q.order_index || index + 1,
-                    answer_options: (q.answer_options || []).map((opt, optIndex) => ({
-                        id: opt.id || optIndex + 1,
-                        option_text: opt.option_text,
-                        is_correct: opt.is_correct,
-                        order_index: opt.order_index || optIndex + 1
-                    }))
-                }));
 
                 // Create room
                 const room = gameManager.createRoom(socket.id, quizId, formattedQuestions);
@@ -170,31 +154,15 @@ function initializeSocketEvents(io) {
                     return;
                 }
 
-                // Transform questions to match expected format
-                const questions = quiz.questions || [];
+                const formattedQuestions = quizService.formatQuestionsForGame(quiz);
 
-                if (questions.length === 0) {
+                if (formattedQuestions.length === 0) {
                     socket.emit('host:create-room', {
                         success: false,
                         error: 'Quiz has no questions'
                     });
                     return;
                 }
-
-                // Transform questions to match the format expected by gameManager
-                const formattedQuestions = questions.map((q, index) => ({
-                    id: q.id,
-                    question_text: q.question_text,
-                    time_limit: q.time_limit || 20,
-                    points: q.points || 1000,
-                    order_index: q.order_index || index + 1,
-                    answer_options: (q.answer_options || []).map((opt, optIndex) => ({
-                        id: opt.id || optIndex + 1,
-                        option_text: opt.option_text,
-                        is_correct: opt.is_correct,
-                        order_index: opt.order_index || optIndex + 1
-                    }))
-                }));
 
                 // Create room
                 const room = gameManager.createRoom(socket.id, quizId, formattedQuestions);

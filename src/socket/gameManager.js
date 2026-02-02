@@ -183,6 +183,9 @@ class GameManager {
         }
 
         const playerId = this.socketIdToPlayerId.get(socketId);
+        if (room.playersAnswered) {
+            room.playersAnswered.delete(socketId);
+        }
         room.players.delete(socketId);
         this.playerSocketToRoom.delete(socketId);
         if (playerId) {
@@ -215,6 +218,9 @@ class GameManager {
             return false;
         }
 
+        if (room.playersAnswered) {
+            room.playersAnswered.delete(socketId);
+        }
         room.players.delete(socketId);
         this.playerSocketToRoom.delete(socketId);
         this.playerIdToRoom.delete(playerId);
@@ -415,7 +421,10 @@ class GameManager {
             return false;
         }
 
-        return room.playersAnswered.size === room.players.size;
+        const activePlayers = room.players.size;
+        const answeredCount = room.playersAnswered ? room.playersAnswered.size : 0;
+
+        return answeredCount >= activePlayers && activePlayers > 0;
     }
 
     /**

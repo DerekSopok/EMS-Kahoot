@@ -4,6 +4,10 @@
   <li>Install dependencies: <code>npm install</code></li>
   <li>Start the server: <code>npm start</code></li>
 </ol>
+<h3>Testing</h3>
+<ul>
+  <li>Run unit tests: <code>npm test</code></li>
+</ul>
 <br>
 <h3>Description</h3>
 <h5>This project is a kahoot clone that uses Node.js, Socket.IO, and JSON quiz storage</h5>

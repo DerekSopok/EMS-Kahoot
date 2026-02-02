@@ -1,6 +1,15 @@
+/**
+ * Legacy Postgres seed runner (archived).
+ * This script is intentionally disabled in production.
+ */
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+
+if (process.env.NODE_ENV === 'production') {
+    console.error('Legacy seeds are disabled in production.');
+    process.exit(1);
+}
 
 async function seedDatabase() {
     const client = new Client({

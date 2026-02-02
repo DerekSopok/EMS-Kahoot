@@ -19,11 +19,139 @@ function initializeSocketEvents(io) {
         console.log(`Client connected: ${socket.id}`);
 
         // ===========================
+        // QUIZ LIST EVENT (for create page)
+        // ===========================
+
+        /**
+         * Request quiz names for the create page
+         * Used by /create/ page to show available quizzes
+         * Emits: gameNamesData with array of quiz objects
+         */
+        socket.on('requestDbNames', async () => {
+            try {
+                const quizzes = await quizService.loadQuizzes();
+                // Transform to match expected format by frontend
+                const quizData = quizzes
+                    .filter(q => q.is_public !== false)
+                    .map(q => ({
+                        id: q.id,
+                        name: q.title
+                    }));
+                socket.emit('gameNamesData', quizData);
+            } catch (error) {
+                console.error('Error fetching quiz names:', error);
+                socket.emit('gameNamesData', []);
+            }
+        });
+
+        // ===========================
         // HOST EVENTS
         // ===========================
 
         /**
-         * Host creates a new room
+         * Legacy host-join event (for backward compatibility with old frontend)
+         * Used by /host/ page when clicking on a quiz from /create/
+         * Expects: { id: string } from URL params
+         * Emits: showGamePin with { pin: string }
+         */
+        socket.on('host-join', async (data) => {
+            try {
+                const quizId = parseInt(data.id);
+
+                if (!quizId || isNaN(quizId)) {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                // Fetch quiz from JSON file storage
+                const quiz = await quizService.getQuizById(quizId);
+
+                if (!quiz) {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                // Transform questions to match expected format
+                const questions = quiz.questions || [];
+
+                if (questions.length === 0) {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                // Transform questions to match the format expected by gameManager
+                const formattedQuestions = questions.map((q, index) => ({
+                    id: q.id,
+                    question_text: q.question_text,
+                    time_limit: q.time_limit || 20,
+                    points: q.points || 1000,
+                    order_index: q.order_index || index + 1,
+                    answer_options: (q.answer_options || []).map((opt, optIndex) => ({
+                        id: opt.id || optIndex + 1,
+                        option_text: opt.option_text,
+                        is_correct: opt.is_correct,
+                        order_index: opt.order_index || optIndex + 1
+                    }))
+                }));
+
+                // Create room
+                const room = gameManager.createRoom(socket.id, quizId, formattedQuestions);
+
+                // Join the room
+                socket.join(room.code);
+
+                console.log(`Game Created with pin: ${room.code} by host ${socket.id}`);
+
+                // Emit in legacy format
+                socket.emit('showGamePin', {
+                    pin: room.code
+                });
+
+            } catch (error) {
+                console.error('Error creating game:', error);
+                socket.emit('noGameFound');
+            }
+        });
+
+        /**
+         * Legacy startGame event (for backward compatibility with old frontend)
+         * Used by /host/ page when host clicks "Start Game"
+         * Emits: gameStarted to host with hostId for redirect
+         * Emits: gameStartedPlayer to all players to redirect them to game
+         */
+        socket.on('startGame', () => {
+            try {
+                const room = gameManager.getRoomByHost(socket.id);
+
+                if (!room) {
+                    socket.emit('error', { message: 'Room not found' });
+                    return;
+                }
+
+                if (room.players.size === 0) {
+                    socket.emit('error', { message: 'No players in room' });
+                    return;
+                }
+
+                // Start the game
+                gameManager.startGame(room.code);
+
+                console.log(`Game started in room ${room.code}`);
+
+                // Tell host to go to game view (legacy format)
+                socket.emit('gameStarted', socket.id);
+
+                // Tell all players to go to game view (legacy format)
+                io.to(room.code).emit('gameStartedPlayer');
+
+            } catch (error) {
+                console.error('Error starting game:', error);
+                socket.emit('error', { message: 'Failed to start game' });
+            }
+        });
+
+        /**
+         * Host creates a new room (new API)
          * Expects: { quizId: number }
          * Emits: { success: boolean, roomCode: string, error?: string }
          */
@@ -314,7 +442,65 @@ function initializeSocketEvents(io) {
         // ===========================
 
         /**
-         * Player joins a room
+         * Legacy player-join event (for backward compatibility with old frontend)
+         * Used by /player/ lobby when joining from home page form
+         * Expects: { pin: string, name: string } from URL params
+         * Emits: noGameFound if game not found, otherwise player stays in lobby
+         * Broadcasts: updatePlayerLobby to host with player list
+         */
+        socket.on('player-join', (data) => {
+            try {
+                const { pin, name } = data;
+                const roomCode = String(pin).toUpperCase();
+
+                if (!pin || !name) {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                const room = gameManager.getRoom(roomCode);
+
+                if (!room) {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                if (room.status === 'playing') {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                // Try to add player
+                const player = gameManager.addPlayer(roomCode, socket.id, name);
+
+                if (!player) {
+                    socket.emit('noGameFound');
+                    return;
+                }
+
+                // Join the room
+                socket.join(roomCode);
+
+                console.log(`Player ${name} joined room ${roomCode}`);
+
+                // Send updated player list to host (legacy format)
+                const players = gameManager.getPlayers(roomCode);
+                const playerList = players.map(p => ({
+                    name: p.name,
+                    id: p.socketId
+                }));
+
+                // Emit to all in room (host will update their player list)
+                io.to(roomCode).emit('updatePlayerLobby', playerList);
+
+            } catch (error) {
+                console.error('Error player joining:', error);
+                socket.emit('noGameFound');
+            }
+        });
+
+        /**
+         * Player joins a room (new API)
          * Expects: { roomCode: string, displayName: string }
          * Emits: { success: boolean, error?: string }
          * Broadcasts: room:player-joined to all in room

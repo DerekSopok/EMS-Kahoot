@@ -22,3 +22,7 @@ Thumbs.db
 # Build files
 dist/
 build/
+
+# Playwright test results
+test-results/
+playwright-report/

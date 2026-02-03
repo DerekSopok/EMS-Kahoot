@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- QR Code Generation for Easy Room Joining:
+  - QR code displayed on host lobby screen alongside room code
+  - Players can scan QR code to instantly join games with code pre-filled
+  - Added QRCode.js CDN library integration (no npm dependency)
+  - Responsive design with side-by-side layout on desktop, stacked on mobile
+  - QR code uses Kahoot purple color scheme (#46178F)
+  - Auto-focus on name input when joining via QR code for seamless UX
+  - New /join route for QR code redirection
+  - Player count display on host lobby screen
+  - Enhanced lobby UI with dual join methods (manual code entry + QR scan)
 - Initial agent handoff system for AI-assisted development
 - AGENT_CONTEXT.md for session state tracking
 - ARCHITECTURE.md for comprehensive system design documentation

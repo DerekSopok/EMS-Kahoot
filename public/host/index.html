@@ -6,17 +6,40 @@
         <link rel = "stylesheet" href = "../css/audio.css">
         <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Tajawal" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     </head>
     <body>
         <button id = "cancel" onclick = "endGame()">Cancel Game</button>
         <button id="mute-btn" class="mute-button" onclick="toggleMute()">🔊</button>
-        <h2 id = "title">Join this Game using the Game Pin: </h2>
-        <h1 id = "gamePinText"></h1>
-        <textarea style = "width: 700px; height: 500px;" readonly id = 'players'></textarea>
-        <br>
+
+        <h1 id = "title">Join the Game!</h1>
+
+        <div class="join-methods">
+            <!-- Method 1: Room Code -->
+            <div class="join-method">
+                <p class="instruction">Go to:</p>
+                <p class="join-url" id="base-url"></p>
+                <p class="instruction">Enter code:</p>
+                <div class="room-code" id="gamePinText">------</div>
+            </div>
+
+            <!-- Method 2: QR Code -->
+            <div class="join-method">
+                <p class="instruction">Or scan:</p>
+                <canvas id="qr-code"></canvas>
+                <p class="join-url-small" id="join-url"></p>
+            </div>
+        </div>
+
+        <div class="player-section">
+            <div class="player-count">
+                <span id="player-count">0</span> players joined
+            </div>
+            <textarea readonly id="players"></textarea>
+        </div>
+
         <button id = 'start' onclick = "startGame()">Start Game</button>
-        <br>
-        <br>
+
         <script src = "../socket.io/socket.io.js"></script>
         <script src = "../js/audioManager.js"></script>
         <script src = "../js/hostLobby.js"></script>

@@ -23,6 +23,9 @@ var io = socketIO(server);
 app.use(express.static(publicPath));
 app.use(express.json());
 
+// Practice mode routes (no auth required)
+app.use('/practice', express.static(path.join(publicPath, 'practice')));
+
 app.use('/api/admin', adminAuth);
 app.use('/api/admin', adminImagesRouter);
 
@@ -342,6 +345,46 @@ app.put('/api/admin/quizzes/:id/questions/reorder', async (req, res) => {
 
 app.get('/api/admin/categories', (req, res) => {
     res.json(CATEGORIES);
+});
+
+// Practice Mode API Routes (no authentication required)
+// Get all quizzes available for practice
+app.get('/api/practice/quizzes', async (req, res) => {
+    try {
+        const quizzes = await quizService.loadQuizzes();
+        // Return public quizzes with summary information
+        const practiceQuizzes = quizzes
+            .filter(q => q.is_public !== false)
+            .map(q => ({
+                id: q.id,
+                title: q.title,
+                description: q.description || '',
+                category: q.category || 'General',
+                questionCount: q.questions ? q.questions.length : 0
+            }));
+        res.json(practiceQuizzes);
+    } catch (error) {
+        console.error('Error fetching practice quizzes:', error);
+        res.status(500).json({ error: 'Failed to fetch quizzes' });
+    }
+});
+
+// Get a specific quiz for practice (no auth required)
+app.get('/api/practice/quizzes/:id', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const quiz = await quizService.getQuizById(id);
+
+        if (!quiz) {
+            return res.status(404).json({ error: 'Quiz not found' });
+        }
+
+        // Return the full quiz with questions for practice
+        res.json(quiz);
+    } catch (error) {
+        console.error('Error fetching practice quiz:', error);
+        res.status(500).json({ error: 'Failed to fetch quiz' });
+    }
 });
 
 //Starting server on port 3000

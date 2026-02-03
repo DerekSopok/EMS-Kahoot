@@ -50,6 +50,30 @@ body {
     font-size: 2rem;
 }
 
+.admin-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.admin-nav a {
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #666;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.admin-nav a:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.admin-nav a.active {
+    background-color: var(--primary);
+    color: white;
+}
+
 .header-actions {
     display: flex;
     gap: 1rem;

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - EMS Kahoot Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/analytics.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>📈 Performance Analytics</h1>
+            <nav class="admin-nav">
+                <a href="/admin">Quizzes</a>
+                <a href="/admin/analytics.html" class="active">Analytics</a>
+            </nav>
+        </header>
+
+        <section id="loginPrompt" class="login-prompt hidden">
+            <h2>Admin Login</h2>
+            <p>Enter your admin token to view analytics.</p>
+            <form id="loginForm" class="login-form">
+                <label for="adminTokenInput">Admin Token</label>
+                <input type="password" id="adminTokenInput" autocomplete="current-password" required>
+                <button type="submit" class="btn btn-primary">Unlock Analytics</button>
+            </form>
+            <p id="loginMessage" class="login-message"></p>
+        </section>
+
+        <section id="analyticsContent" class="analytics-container hidden">
+            <!-- Overview Cards -->
+            <div class="stats-grid" id="overview-stats">
+                <!-- Loaded via JS -->
+            </div>
+
+            <!-- Category Performance -->
+            <div class="chart-section">
+                <h2>Performance by Category</h2>
+                <p class="subtitle">Categories with lowest accuracy need more training</p>
+                <canvas id="category-chart"></canvas>
+            </div>
+
+            <!-- Hardest Questions -->
+            <div class="table-section">
+                <h2>❌ Questions Needing Review</h2>
+                <p class="subtitle">Questions with lowest accuracy rates</p>
+                <table id="hardest-questions">
+                    <!-- Loaded via JS -->
+                </table>
+            </div>
+
+            <!-- Trend Chart -->
+            <div class="chart-section">
+                <h2>Activity Trends (Last 30 Days)</h2>
+                <canvas id="trend-chart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <script src="/admin/analytics.js"></script>
+</body>
+</html>

@@ -62,6 +62,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added socket input validation for display names, room codes, answers, and response times.
 - Prevented player removal from leaving stale answer tracking state.
 - Serialized quiz JSON writes to avoid lost updates during concurrent edits.
+- Fixed Game Over screen displaying blank page instead of final leaderboard:
+  - Now properly hides answer grid when game ends
+  - Displays podium-style leaderboard with medals (🥇🥈🥉) for top 3 players
+  - Shows final scores alongside player names
+  - Added quiz title display on Game Over screen
+  - Includes "Play Again" and "Back to Dashboard" buttons
+  - Added smooth animations (bounceIn, fadeIn) for leaderboard entries
+  - Improved mobile responsiveness for Game Over display
 
 ### Security
 - Added admin token authentication for admin APIs and hardened quiz rendering against XSS.

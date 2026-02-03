@@ -29,5 +29,25 @@
             <br/><br/>
             <a href="/practice" id="host">📖 Practice Mode - Study Solo</a>
         </center>
+
+        <script>
+            // Auto-fill room code from URL parameter
+            document.addEventListener('DOMContentLoaded', () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+
+                if (code) {
+                    const pinInput = document.getElementById('pin');
+                    if (pinInput) {
+                        pinInput.value = code.toUpperCase();
+                        // Auto-focus the name input so user can start typing immediately
+                        const nameInput = document.getElementById('name');
+                        if (nameInput) {
+                            nameInput.focus();
+                        }
+                    }
+                }
+            });
+        </script>
     </body>
 </html>

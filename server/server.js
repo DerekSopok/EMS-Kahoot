@@ -27,6 +27,12 @@ app.use(express.json());
 // Practice mode routes (no auth required)
 app.use('/practice', express.static(path.join(publicPath, 'practice')));
 
+// Join route - redirects to player join page with code parameter
+app.get('/join', (req, res) => {
+    const code = req.query.code || '';
+    res.redirect(`/?code=${code}`);
+});
+
 app.use('/api/admin', adminAuth);
 app.use('/api/admin', adminImagesRouter);
 

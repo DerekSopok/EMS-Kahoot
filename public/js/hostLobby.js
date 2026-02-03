@@ -18,6 +18,12 @@ const updatePlayerList = (players = []) => {
     }
 
     playersList.value = players.map(player => player.name).join('\n');
+
+    // Update player count
+    const playerCountEl = document.getElementById('player-count');
+    if (playerCountEl) {
+        playerCountEl.textContent = players.length;
+    }
 };
 
 socket.on('connect', () => {
@@ -44,6 +50,44 @@ socket.on('host:create-room', (data) => {
 
     if (startButton) {
         startButton.disabled = false;
+    }
+
+    // Generate QR code with join URL
+    const joinUrl = `${window.location.origin}/?code=${roomCode}`;
+
+    // Display base URL (without protocol)
+    const baseUrlEl = document.getElementById('base-url');
+    if (baseUrlEl) {
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+        baseUrlEl.textContent = port ? `${hostname}:${port}` : hostname;
+    }
+
+    // Generate QR code
+    const qrContainer = document.getElementById('qr-code');
+    if (qrContainer && typeof QRCode !== 'undefined') {
+        qrContainer.innerHTML = ''; // Clear previous
+
+        QRCode.toCanvas(qrContainer, joinUrl, {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#46178F',  // Kahoot purple
+                light: '#FFFFFF'
+            }
+        }, function(error) {
+            if (error) {
+                console.error('QR Code error:', error);
+                // Fallback: show text if QR fails
+                qrContainer.style.display = 'none';
+            }
+        });
+    }
+
+    // Show join URL below QR
+    const joinUrlEl = document.getElementById('join-url');
+    if (joinUrlEl) {
+        joinUrlEl.textContent = joinUrl;
     }
 
     // Play lobby music when room is created

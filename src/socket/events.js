@@ -280,7 +280,9 @@ function initializeSocketEvents(io) {
                     }
 
                     io.to(room.code).emit('game:ended', {
-                        leaderboard: finalLeaderboard
+                        leaderboard: finalLeaderboard,
+                        quizTitle: room.quizTitle,
+                        totalQuestions: room.questions.length
                     });
 
                     console.log(`Game ended in room ${room.code}`);
@@ -349,7 +351,9 @@ function initializeSocketEvents(io) {
                 }
 
                 io.to(room.code).emit('game:ended', {
-                    leaderboard: finalLeaderboard
+                    leaderboard: finalLeaderboard,
+                    quizTitle: room.quizTitle,
+                    totalQuestions: room.questions.length
                 });
 
                 console.log(`Host ended game in room ${room.code}`);

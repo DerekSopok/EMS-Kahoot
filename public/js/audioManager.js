@@ -25,8 +25,8 @@ class AudioManager {
 
     const soundFiles = {
       lobbyMusic: '/audio/lobby-music.mp3',
-      countdown: '/audio/countdown.mp3',
-      questionReveal: '/audio/question-reveal.mp3',
+      countdown: '/audio/countdown.wav',
+      questionReveal: '/audio/question-reveal.wav',
       correct: '/audio/correct.mp3',
       wrong: '/audio/wrong.mp3',
       timesUp: '/audio/times-up.mp3',

@@ -9,8 +9,8 @@ The following audio files are needed for the complete audio experience:
 | File | Purpose | Specifications |
 |------|---------|----------------|
 | `lobby-music.mp3` | Background music for waiting lobby | Upbeat, loopable, ~30-60 seconds |
-| `countdown.mp3` | 3-2-1-GO countdown beeps | Short, attention-grabbing, ~3 seconds |
-| `question-reveal.mp3` | Sound when question appears | Quick reveal sound, ~1 second |
+| `countdown.wav` | 3-2-1-GO countdown beeps | Short, attention-grabbing, ~3 seconds |
+| `question-reveal.wav` | Sound when question appears | Quick reveal sound, ~1 second |
 | `correct.mp3` | Correct answer chime | Positive, satisfying chime, ~1-2 seconds |
 | `wrong.mp3` | Wrong answer buzz | Negative buzz sound, ~1-2 seconds |
 | `times-up.mp3` | Time's up alarm | Urgent alarm sound, ~2 seconds |
@@ -50,10 +50,13 @@ The following audio files are needed for the complete audio experience:
 
 ## File Format Requirements
 
-- **Format**: MP3
-- **Bitrate**: 128-192 kbps (balance quality and file size)
+- **Preferred Format**: MP3 (compressed, smaller file size)
+- **Supported Formats**: MP3, WAV, OGG (browsers support multiple formats)
+- **Bitrate**: 128-192 kbps for MP3 (balance quality and file size)
 - **Sample Rate**: 44.1 kHz
 - **File Size**: Keep individual files under 500KB for fast loading
+
+**Note**: Currently, `countdown.wav` (653KB) and `question-reveal.wav` (230KB) are in WAV format. WAV files are uncompressed and larger than MP3. Consider converting to MP3 for better performance and faster loading times.
 
 ## How to Add Audio Files
 
@@ -73,7 +76,15 @@ If your audio files are too large:
 ```bash
 # Using ffmpeg to compress MP3 files
 ffmpeg -i input.mp3 -b:a 128k -ar 44100 output.mp3
+
+# Convert WAV to MP3 (recommended for better performance)
+ffmpeg -i countdown.wav -b:a 128k -ar 44100 countdown.mp3
+ffmpeg -i question-reveal.wav -b:a 128k -ar 44100 question-reveal.mp3
 ```
+
+**Performance Optimization**: Converting the WAV files to MP3 can reduce:
+- `countdown.wav` from 653KB to ~100KB (85% reduction)
+- `question-reveal.wav` from 230KB to ~30KB (87% reduction)
 
 ## Testing Audio
 
@@ -93,6 +104,16 @@ When using audio from external sources:
 
 ## Current Status
 
-🔴 **Audio files need to be added** - The audio system is implemented but requires audio files to be placed in this directory.
+✅ **Audio system ready** - All 8 required audio files have been added to this directory.
 
-Once audio files are added, the status will be: ✅ **Audio system ready**
+### Uploaded Files:
+- ✅ `lobby-music.mp3` (4.5MB)
+- ⚠️ `countdown.wav` (653KB) - WAV format, consider converting to MP3
+- ⚠️ `question-reveal.wav` (230KB) - WAV format, consider converting to MP3
+- ✅ `correct.mp3` (72KB)
+- ✅ `wrong.mp3` (56KB)
+- ✅ `times-up.mp3` (99KB)
+- ✅ `leaderboard.mp3` (77KB)
+- ✅ `winner.mp3` (320KB)
+
+**Total Size**: ~6MB (could be reduced to ~5.2MB by converting WAV files to MP3)

@@ -48,16 +48,18 @@ class GameManager {
      * Create a new game room
      * @param {string} hostSocketId - Socket ID of the host
      * @param {number} quizId - Database ID of the quiz
+     * @param {string} quizTitle - Title of the quiz
      * @param {Array} questions - Quiz questions from database
      * @returns {Object} Room object with code and initial state
      */
-    createRoom(hostSocketId, quizId, questions) {
+    createRoom(hostSocketId, quizId, quizTitle, questions) {
         const roomCode = this.generateRoomCode();
 
         const room = {
             code: roomCode,
             hostSocketId,
             quizId,
+            quizTitle,
             questions,
             players: new Map(), // playerId -> Player
             status: 'waiting', // waiting, playing, finished
@@ -526,6 +528,53 @@ class GameManager {
     getPlayersAnsweredCount(roomCode) {
         const room = this.rooms.get(roomCode);
         return room ? room.playersAnswered.size : 0;
+    }
+
+    /**
+     * Collect game statistics for analytics
+     * @param {string} roomCode - Room code
+     * @returns {Object|null} Game statistics or null if room not found
+     */
+    collectGameStats(roomCode) {
+        const room = this.rooms.get(roomCode);
+        if (!room) {
+            return null;
+        }
+
+        // Collect question statistics
+        const questionStats = room.questions.map((question, index) => {
+            let correctCount = 0;
+            let incorrectCount = 0;
+
+            // Count correct/incorrect answers for this question
+            for (const player of room.players.values()) {
+                const answer = player.answers.find(a => a.questionIndex === index);
+                if (answer) {
+                    if (answer.isCorrect) {
+                        correctCount++;
+                    } else {
+                        incorrectCount++;
+                    }
+                }
+            }
+
+            return {
+                questionId: question.id,
+                questionText: question.question_text,
+                correctCount,
+                incorrectCount
+            };
+        });
+
+        return {
+            quizId: room.quizId,
+            quizTitle: room.quizTitle,
+            roomCode: room.code,
+            playerCount: room.players.size,
+            startedAt: room.createdAt.toISOString(),
+            leaderboard: this.getLeaderboard(roomCode),
+            questionStats
+        };
     }
 }
 

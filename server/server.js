@@ -10,6 +10,7 @@ const { initializeSocketEvents } = require('../src/socket/events');
 
 //Import services
 const quizService = require('../src/services/quizService');
+const analyticsService = require('../src/services/analyticsService');
 const adminAuth = require('../src/middleware/adminAuth');
 const { CATEGORIES, validateQuiz, validateQuestion } = require('../src/utils/quizValidation');
 const adminImagesRouter = require('../src/routes/adminImages');
@@ -384,6 +385,49 @@ app.get('/api/practice/quizzes/:id', async (req, res) => {
     } catch (error) {
         console.error('Error fetching practice quiz:', error);
         res.status(500).json({ error: 'Failed to fetch quiz' });
+    }
+});
+
+// Analytics API Routes (admin auth required)
+app.get('/api/admin/analytics/overview', async (req, res) => {
+    try {
+        const stats = await analyticsService.getOverviewStats();
+        res.json(stats);
+    } catch (error) {
+        console.error('Error fetching overview stats:', error);
+        res.status(500).json({ error: 'Failed to fetch overview stats' });
+    }
+});
+
+app.get('/api/admin/analytics/categories', async (req, res) => {
+    try {
+        const data = await analyticsService.getPerformanceByCategory();
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching category performance:', error);
+        res.status(500).json({ error: 'Failed to fetch category performance' });
+    }
+});
+
+app.get('/api/admin/analytics/hardest-questions', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const data = await analyticsService.getHardestQuestions(limit);
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching hardest questions:', error);
+        res.status(500).json({ error: 'Failed to fetch hardest questions' });
+    }
+});
+
+app.get('/api/admin/analytics/trends', async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 30;
+        const data = await analyticsService.getTrendData(days);
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching trend data:', error);
+        res.status(500).json({ error: 'Failed to fetch trend data' });
     }
 });
 

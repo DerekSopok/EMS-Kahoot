@@ -7,6 +7,7 @@
 
 const GameManager = require('./gameManager');
 const quizService = require('../services/quizService');
+const resultsService = require('../services/resultsService');
 const {
     validateDisplayName,
     validateRoomCode,
@@ -87,7 +88,7 @@ function initializeSocketEvents(io) {
                 }
 
                 // Create room
-                const room = gameManager.createRoom(socket.id, quizId, formattedQuestions);
+                const room = gameManager.createRoom(socket.id, quizId, quiz.title, formattedQuestions);
 
                 // Join the room
                 socket.join(room.code);
@@ -249,7 +250,7 @@ function initializeSocketEvents(io) {
          * Host advances to next question
          * Emits: game:question to all players
          */
-        socket.on('host:next-question', () => {
+        socket.on('host:next-question', async () => {
             try {
                 const room = gameManager.getRoomByHost(socket.id);
 
@@ -267,6 +268,16 @@ function initializeSocketEvents(io) {
                 if (!hasNext) {
                     // Game is finished
                     const finalLeaderboard = gameManager.getLeaderboard(room.code);
+
+                    // Save game results for analytics
+                    try {
+                        const gameStats = gameManager.collectGameStats(room.code);
+                        if (gameStats) {
+                            await resultsService.saveGameResult(gameStats);
+                        }
+                    } catch (error) {
+                        console.error('Error saving game results:', error);
+                    }
 
                     io.to(room.code).emit('game:ended', {
                         leaderboard: finalLeaderboard
@@ -314,7 +325,7 @@ function initializeSocketEvents(io) {
          * Host ends the game
          * Emits: game:ended with final leaderboard
          */
-        socket.on('host:end-game', () => {
+        socket.on('host:end-game', async () => {
             try {
                 const room = gameManager.getRoomByHost(socket.id);
 
@@ -326,6 +337,16 @@ function initializeSocketEvents(io) {
                 gameManager.endGame(room.code);
 
                 const finalLeaderboard = gameManager.getLeaderboard(room.code);
+
+                // Save game results for analytics
+                try {
+                    const gameStats = gameManager.collectGameStats(room.code);
+                    if (gameStats) {
+                        await resultsService.saveGameResult(gameStats);
+                    }
+                } catch (error) {
+                    console.error('Error saving game results:', error);
+                }
 
                 io.to(room.code).emit('game:ended', {
                     leaderboard: finalLeaderboard

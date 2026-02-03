@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Browser autoplay restriction handling with automatic preloading on user interaction
   - Audio documentation and sourcing guide (public/audio/README.md)
   - Shared audio CSS styling for consistent mute button appearance (public/css/audio.css)
+- Added Practice Mode for solo study:
+  - Quiz selection page with category filtering (public/practice/index.html)
+  - Self-paced quiz taking interface (public/practice/quiz.html)
+  - Immediate feedback with correct/incorrect answers and explanations
+  - Final score display with percentage and answer review
+  - No authentication required for practice mode
+  - Mobile-responsive design with Kahoot-style answer buttons
+  - Practice mode API endpoints for quiz access (/api/practice/quizzes)
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.

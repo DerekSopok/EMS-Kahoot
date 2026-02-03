@@ -35,6 +35,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No authentication required for practice mode
   - Mobile-responsive design with Kahoot-style answer buttons
   - Practice mode API endpoints for quiz access (/api/practice/quizzes)
+- Added Performance Analytics Dashboard for educators:
+  - resultsService to store game results in JSON format (src/services/resultsService.js)
+  - analyticsService with data aggregation functions (src/services/analyticsService.js)
+  - Overview statistics showing total games, players, average score, and accuracy
+  - Category performance chart to identify topics needing more training
+  - Hardest questions list showing questions with lowest accuracy rates
+  - Activity trend chart tracking engagement over 30 days
+  - Chart.js integration for visual data representation
+  - Admin navigation between Quizzes and Analytics pages
+  - Automatic game results saving when games end
+  - Admin authentication required for analytics access
 
 ### Changed
 - Archived legacy Postgres migration/seed tooling and updated deployment guidance.

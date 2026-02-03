@@ -157,7 +157,7 @@ const showResults = (data) => {
     updateLeaderboard(data.leaderboard || []);
 };
 
-const updateLeaderboard = (leaderboard) => {
+const updateLeaderboard = (leaderboard, showScores = false) => {
     const winners = [
         document.getElementById('winner1'),
         document.getElementById('winner2'),
@@ -166,13 +166,17 @@ const updateLeaderboard = (leaderboard) => {
         document.getElementById('winner5')
     ];
 
+    const medals = ['🥇', '🥈', '🥉', '', ''];
+
     winners.forEach((element, index) => {
         if (!element) {
             return;
         }
         const entry = leaderboard[index];
         if (entry) {
-            element.textContent = `${index + 1}. ${entry.name}`;
+            const medal = medals[index];
+            const scoreText = showScores ? ` - ${entry.score.toLocaleString()} pts` : '';
+            element.textContent = `${index + 1}. ${medal} ${entry.name}${scoreText}`;
         } else {
             element.textContent = `${index + 1}.`;
         }
@@ -230,26 +234,100 @@ socket.on('game:times-up', (data) => {
 
 socket.on('game:ended', (data) => {
     clearInterval(timerId);
-    if (questionText) {
-        questionText.textContent = 'GAME OVER';
-    }
-    updateQuestionImage(null);
-    if (timerText) {
-        timerText.style.display = 'none';
+
+    // Hide question elements
+    if (questionNum) {
+        questionNum.style.display = 'none';
     }
     if (playersAnswered) {
-        playersAnswered.textContent = '';
+        playersAnswered.style.display = 'none';
+    }
+    if (timerText) {
+        timerText.style.display = 'none';
     }
     if (nextButton) {
         nextButton.style.display = 'none';
     }
+    updateQuestionImage(null);
+
+    // Hide answer grid
+    answerElements.forEach((element) => {
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+
+    // Update question text to show Game Over with quiz title
+    if (questionText) {
+        questionText.textContent = '🏆 Game Over!';
+        questionText.style.marginTop = '60px';
+        questionText.style.marginBottom = '20px';
+    }
+
+    // Add quiz title if available
+    const quizTitle = data.quizTitle;
+    if (quizTitle) {
+        const titleElement = document.createElement('h3');
+        titleElement.id = 'game-over-subtitle';
+        titleElement.textContent = quizTitle;
+        titleElement.style.cssText = 'text-align: center; color: rgba(255,255,255,0.9); font-size: 1.8rem; font-weight: 600; margin-bottom: 40px; font-family: "Raleway", sans-serif;';
+        if (questionText && questionText.parentNode) {
+            questionText.parentNode.insertBefore(titleElement, questionText.nextSibling);
+        }
+    }
+
+    // Show leaderboard title and winners
+    const winnerTitle = document.getElementById('winnerTitle');
+    if (winnerTitle) {
+        winnerTitle.textContent = 'Final Leaderboard';
+        winnerTitle.style.display = 'block';
+    }
+
+    // Show winner elements
+    const winners = [
+        document.getElementById('winner1'),
+        document.getElementById('winner2'),
+        document.getElementById('winner3'),
+        document.getElementById('winner4'),
+        document.getElementById('winner5')
+    ];
+
+    winners.forEach((element) => {
+        if (element) {
+            element.style.display = 'block';
+        }
+    });
 
     // Play winner celebration sound
     if (typeof audioManager !== 'undefined') {
         audioManager.play('winner');
     }
 
-    updateLeaderboard(data.leaderboard || []);
+    // Update leaderboard with scores
+    updateLeaderboard(data.leaderboard || [], true);
+
+    // Add game over actions
+    const actionsContainer = document.createElement('div');
+    actionsContainer.id = 'game-over-actions';
+    actionsContainer.style.cssText = 'text-align: center; margin-top: 40px;';
+
+    const playAgainBtn = document.createElement('button');
+    playAgainBtn.textContent = 'Play Again';
+    playAgainBtn.onclick = () => location.reload();
+    playAgainBtn.style.cssText = 'margin: 0 10px; padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; background: white; color: var(--color-background); font-weight: 700; font-family: "Raleway", sans-serif;';
+
+    const dashboardBtn = document.createElement('button');
+    dashboardBtn.textContent = 'Back to Dashboard';
+    dashboardBtn.onclick = () => location.href = '/admin';
+    dashboardBtn.style.cssText = 'margin: 0 10px; padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; font-weight: 700; font-family: "Raleway", sans-serif; border: 2px solid white;';
+
+    actionsContainer.appendChild(playAgainBtn);
+    actionsContainer.appendChild(dashboardBtn);
+
+    const winner5 = document.getElementById('winner5');
+    if (winner5 && winner5.parentNode) {
+        winner5.parentNode.insertBefore(actionsContainer, winner5.nextSibling);
+    }
 });
 
 function nextQuestion() {

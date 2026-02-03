@@ -64,24 +64,36 @@ socket.on('host:create-room', (data) => {
     }
 
     // Generate QR code
-    const qrContainer = document.getElementById('qr-code');
-    if (qrContainer && typeof QRCode !== 'undefined') {
-        qrContainer.innerHTML = ''; // Clear previous
+    const qrCanvas = document.getElementById('qr-code');
+    if (qrCanvas) {
+        if (typeof QRCode === 'undefined') {
+            console.error('QRCode library not loaded');
+            qrCanvas.style.display = 'none';
+            return;
+        }
 
-        QRCode.toCanvas(qrContainer, joinUrl, {
-            width: 200,
-            margin: 2,
-            color: {
-                dark: '#46178F',  // Kahoot purple
-                light: '#FFFFFF'
-            }
-        }, function(error) {
-            if (error) {
-                console.error('QR Code error:', error);
-                // Fallback: show text if QR fails
-                qrContainer.style.display = 'none';
-            }
-        });
+        try {
+            QRCode.toCanvas(qrCanvas, joinUrl, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#46178F',  // Kahoot purple
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error('QR Code generation error:', error);
+                    qrCanvas.style.display = 'none';
+                } else {
+                    console.log('QR Code generated successfully for:', joinUrl);
+                }
+            });
+        } catch (error) {
+            console.error('QR Code exception:', error);
+            qrCanvas.style.display = 'none';
+        }
+    } else {
+        console.error('QR canvas element not found');
     }
 
     // Show join URL below QR
